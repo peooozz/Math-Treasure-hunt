@@ -3,6 +3,7 @@
  */
 import * as THREE from 'three';
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls.js';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import * as CANNON from 'cannon-es';
 import TWEEN from '@tweenjs/tween.js';
 import Physics from './physics';
@@ -22,6 +23,11 @@ const Player = (() => {
     let canJump = false;
     let walkTime = 0;
     
+    // Hover Mouse Look State
+    let isHovering = false;
+    let lastMouseX = null;
+    let lastMouseY = null;
+    
     // Stats & Inventory
     let hp = 100;
     let score = 0;
@@ -31,18 +37,18 @@ const Player = (() => {
     let antiGravDuration = 0.0;
     const maxAntiGravDuration = 30.0;
     
-    // SMG Gun Viewmodel
+    // Throwing Arms Viewmodel
     let gunGroup;
-    let muzzleFlash;
-    let muzzleLight;
-    const defaultGunPos = new THREE.Vector3(0.35, -0.35, -0.7);
+    let mixer;
+    let throwAction;
+    const defaultGunPos = new THREE.Vector3(0.0, -0.35, -0.65);
     const prevCamRotation = new THREE.Euler();
     
-    // Shooting
+    // Shooting (Energy Orbs)
     const bullets = [];
-    const bulletSpeed = 60;
+    const bulletSpeed = 45;
     let lastShotTime = 0;
-    const shotCooldown = 130; // Rapid fire
+    const shotCooldown = 600; // Cooldown for throwing animation
     
     // UI Callbacks
     let callbacks = {
@@ -71,7 +77,7 @@ const Player = (() => {
         callbacks.onKeysChange(keyCount);
         
         // 1. Create Cannon.js physical body for player (a sphere)
-        const radius = 1.0;
+        const radius = 0.65; // Smaller radius to allow perfect navigation in narrow streets
         body = Physics.createSphere(
             initialPosition.x, 
             initialPosition.y, 
@@ -109,8 +115,54 @@ const Player = (() => {
             callbacks.onNotification("STATION ACTIVE");
         });
         
-        // Create the high-graphics 3D robotic hands and SMG weapon model
-        createRoboticHandsAndSMG();
+        // Setup hover mouse-look when pointer lock is not engaged
+        const canvas = document.getElementById('game-canvas');
+        if (canvas) {
+            const handleMouseEnter = () => {
+                isHovering = true;
+            };
+            const handleMouseLeave = () => {
+                isHovering = false;
+                lastMouseX = null;
+                lastMouseY = null;
+            };
+            const handleMouseMove = (e) => {
+                if (controls.isLocked) return;
+                if (!isHovering) return;
+
+                const rect = canvas.getBoundingClientRect();
+                const mouseX = e.clientX - rect.left;
+                const mouseY = e.clientY - rect.top;
+
+                if (lastMouseX !== null && lastMouseY !== null) {
+                    const deltaX = e.movementX !== undefined ? e.movementX : (mouseX - lastMouseX);
+                    const deltaY = e.movementY !== undefined ? e.movementY : (mouseY - lastMouseY);
+
+                    const sensitivity = 0.0025;
+                    cameraRef.rotation.y -= deltaX * sensitivity;
+                    cameraRef.rotation.x -= deltaY * sensitivity;
+                    cameraRef.rotation.x = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, cameraRef.rotation.x));
+                }
+                lastMouseX = mouseX;
+                lastMouseY = mouseY;
+            };
+
+            // Remove existing to prevent duplicate bindings on restart
+            canvas.removeEventListener('mouseenter', canvas._onMouseEnter);
+            canvas.removeEventListener('mouseleave', canvas._onMouseLeave);
+            canvas.removeEventListener('mousemove', canvas._onMouseMove);
+
+            canvas._onMouseEnter = handleMouseEnter;
+            canvas._onMouseLeave = handleMouseLeave;
+            canvas._onMouseMove = handleMouseMove;
+
+            canvas.addEventListener('mouseenter', handleMouseEnter);
+            canvas.addEventListener('mouseleave', handleMouseLeave);
+            canvas.addEventListener('mousemove', handleMouseMove);
+        }
+
+        // Create the high-graphics 3D throwing arms viewmodel
+        createThrowingArms();
         prevCamRotation.copy(cameraRef.rotation);
 
         // 3. Register Key listeners
@@ -124,267 +176,105 @@ const Player = (() => {
     }
 
     /**
-     * Procedurally constructs highly detailed 3D cybernetic arms and Sci-Fi SMG model
+     * Loads the rigged hands GLB and configures throwing skeletal animation
      */
-    function createRoboticHandsAndSMG() {
+    function createThrowingArms() {
         gunGroup = new THREE.Group();
         gunGroup.position.copy(defaultGunPos);
         cameraRef.add(gunGroup);
 
-        const metalChrome = new THREE.MeshStandardMaterial({
-            color: 0x8a95a5,
-            metalness: 0.95,
-            roughness: 0.05
-        });
-        const emissivePink = new THREE.MeshBasicMaterial({
-            color: 0xff007a,
-            toneMapped: false
-        });
-
-        // Helper to construct fully detailed, articulated mechanical hands
-        function createDetailedHand(armGroup, wristOffset, isLeft) {
-            const handGroup = new THREE.Group();
-            handGroup.position.copy(wristOffset);
+        // Load the Rigged throwing hands GLB
+        const loader = new GLTFLoader();
+        const path = "/fps_arms_throwing.glb";
+        
+        const setupLoadedGltf = (gltf) => {
+            const handsScene = gltf.scene;
             
-            // Adjust hand rotation to look natural gripping the weapon
-            if (isLeft) {
-                handGroup.rotation.set(0.1, -0.4, 0.2);
-            } else {
-                handGroup.rotation.set(0.2, 0.3, -0.1);
-            }
-            armGroup.add(handGroup);
-
-            const carbonWhite = new THREE.MeshStandardMaterial({
-                color: 0xffffff,
-                metalness: 0.2,
-                roughness: 0.1
+            const handsMaterial = new THREE.MeshStandardMaterial({
+                color: 0xcccccc, // natural light grey skin tone/fabric representation
+                metalness: 0.1,
+                roughness: 0.6
             });
 
-            // Palm base
-            const palmGeo = new THREE.BoxGeometry(0.065, 0.02, 0.075);
-            const palm = new THREE.Mesh(palmGeo, carbonWhite);
-            palm.castShadow = true;
-            handGroup.add(palm);
-
-            // 5 detailed fingers (Thumb, Index, Middle, Ring, Pinky)
-            const fingerAngles = isLeft ? [0.6, 0.1, 0, -0.1, -0.3] : [-0.6, -0.1, 0, 0.1, 0.3];
-            const fingerSpread = isLeft ? [0.015, 0.008, 0, -0.008, -0.015] : [-0.015, -0.008, 0, 0.008, 0.015];
-            const fingerNames = ['thumb', 'index', 'middle', 'ring', 'pinky'];
-
-            fingerNames.forEach((name, i) => {
-                const fGroup = new THREE.Group();
-                const isThumb = name === 'thumb';
-                const fZ = isThumb ? 0.01 : -0.038;
-                const fX = isThumb ? (isLeft ? 0.032 : -0.032) : fingerSpread[i];
-                
-                fGroup.position.set(fX, 0.005, fZ);
-                fGroup.rotation.y = fingerAngles[i];
-                if (isThumb) {
-                    fGroup.rotation.x = 0.2;
-                    fGroup.rotation.z = isLeft ? 0.4 : -0.4;
-                } else {
-                    fGroup.rotation.x = -0.55; // curled grip pose
+            handsScene.traverse(child => {
+                if (child.isMesh) {
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                    
+                    if (child.material) {
+                        // Force opacity and turn off transparency to guarantee visibility
+                        child.material.transparent = false;
+                        child.material.opacity = 1.0;
+                        child.material.depthWrite = true;
+                        child.material.depthTest = true;
+                        
+                        if (child.material.map) {
+                            child.material.metalness = 0.1;
+                            child.material.roughness = 0.65;
+                        } else {
+                            child.material = handsMaterial;
+                        }
+                    }
                 }
-                handGroup.add(fGroup);
+            });
 
-                // Knuckle joint (glowing pink connector)
-                const knuckle = new THREE.Mesh(new THREE.SphereGeometry(0.011, 8, 8), emissivePink);
-                fGroup.add(knuckle);
+            // Reset scale/position/rotation first
+            handsScene.scale.set(1, 1, 1);
+            handsScene.position.set(0, 0, 0);
+            handsScene.rotation.set(0, Math.PI, 0);
 
-                // Proximal segment
-                const seg1Len = isThumb ? 0.018 : (name === 'middle' ? 0.026 : 0.022);
-                const phalanx1 = new THREE.Mesh(new THREE.CylinderGeometry(0.007, 0.006, seg1Len, 5), carbonWhite);
-                phalanx1.rotation.x = Math.PI / 2;
-                phalanx1.position.z = -seg1Len / 2;
-                phalanx1.castShadow = true;
-                fGroup.add(phalanx1);
+            // Skinned scale bypass to achieve realistic human dimensions (both arms fully visible)
+            const scaleFactor = 0.25;
+            handsScene.scale.set(scaleFactor, scaleFactor, scaleFactor);
 
-                // Middle joint
-                const midJoint = new THREE.Mesh(new THREE.SphereGeometry(0.008, 6, 6), metalChrome);
-                midJoint.position.z = -seg1Len;
-                fGroup.add(midJoint);
+            // Center and position the mesh relative to gunGroup so it is perfectly visible.
+            // Values are pre-calculated for the skinned fps_arms_throwing geometry
+            handsScene.position.x = 0;
+            handsScene.position.y = 1.53;
+            handsScene.position.z = -4.04;
 
-                // Distal segment
-                const seg2Len = seg1Len * 0.75;
-                const phalanx2 = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.0045, seg2Len, 4), carbonWhite);
-                phalanx2.rotation.x = Math.PI / 2;
-                phalanx2.position.set(0, 0, -seg1Len - seg2Len / 2);
-                phalanx2.castShadow = true;
-                fGroup.add(phalanx2);
+            gunGroup.add(handsScene);
 
-                // Tip
-                const tip = new THREE.Mesh(new THREE.SphereGeometry(0.0055, 6, 6), emissivePink);
-                tip.position.set(0, 0, -seg1Len - seg2Len);
-                fGroup.add(tip);
+            // Set up animation mixer
+            if (gltf.animations && gltf.animations.length > 0) {
+                mixer = new THREE.AnimationMixer(handsScene);
+                const clip = gltf.animations.find(anim => anim.name === "trhow") || gltf.animations[0];
+                if (clip) {
+                    throwAction = mixer.clipAction(clip);
+                    throwAction.setLoop(THREE.LoopOnce);
+                    throwAction.clampWhenFinished = true; // clamp so it stays on screen
+                    throwAction.timeScale = 2.0; // Play faster for snappier feedback
+                    
+                    // Show hands initially in the ready pose
+                    throwAction.reset();
+                    throwAction.paused = true;
+                    throwAction.time = 0;
+                    throwAction.play();
+                }
+
+                // Return to ready pose when finished
+                mixer.addEventListener('finished', (e) => {
+                    if (e.action === throwAction) {
+                        throwAction.paused = true;
+                        throwAction.time = 0;
+                    }
+                });
+            }
+        };
+
+        if (window.GameManager && window.GameManager.getCachedModel && window.GameManager.getCachedModel(path)) {
+            setupLoadedGltf(window.GameManager.getCachedModel(path));
+        } else {
+            loader.load(path, (gltf) => {
+                setupLoadedGltf(gltf);
+            }, undefined, (err) => {
+                console.error("Failed to load throwing arms model inside Player:", err);
             });
         }
-
-        // ==================== 1. REALISTIC DOUBLE-BARREL SHOTGUN MODEL ====================
-        const shotgunPivot = new THREE.Group();
-        gunGroup.add(shotgunPivot);
-
-        const woodMat = new THREE.MeshStandardMaterial({
-            color: 0x5c4033, // Rich walnut wood stock
-            roughness: 0.75,
-            metalness: 0.1
-        });
-        const metalShotgun = new THREE.MeshStandardMaterial({
-            color: 0x111827, // Dark slate gunmetal
-            metalness: 0.9,
-            roughness: 0.25
-        });
-
-        // 1a. Receiver
-        const receiverGeo = new THREE.BoxGeometry(0.075, 0.095, 0.35);
-        const receiver = new THREE.Mesh(receiverGeo, metalShotgun);
-        receiver.position.set(0, 0, 0);
-        receiver.castShadow = true;
-        shotgunPivot.add(receiver);
-
-        // 1b. Double Barrels (two cylinders side-by-side)
-        const barrelGeo = new THREE.CylinderGeometry(0.016, 0.016, 0.75, 8);
-        
-        const barrelL = new THREE.Mesh(barrelGeo, metalChrome);
-        barrelL.rotation.x = Math.PI / 2;
-        barrelL.position.set(-0.018, 0.02, -0.45);
-        barrelL.castShadow = true;
-        shotgunPivot.add(barrelL);
-
-        const barrelR = new THREE.Mesh(barrelGeo, metalChrome);
-        barrelR.rotation.x = Math.PI / 2;
-        barrelR.position.set(0.018, 0.02, -0.45);
-        barrelR.castShadow = true;
-        shotgunPivot.add(barrelR);
-
-        // Under-barrel support/magazine tube
-        const tubeGeo = new THREE.CylinderGeometry(0.014, 0.014, 0.55, 8);
-        const tube = new THREE.Mesh(tubeGeo, metalShotgun);
-        tube.rotation.x = Math.PI / 2;
-        tube.position.set(0, -0.015, -0.35);
-        tube.castShadow = true;
-        shotgunPivot.add(tube);
-
-        // 1c. Wooden Stock (slanted buttstock)
-        const stockGeo = new THREE.BoxGeometry(0.065, 0.085, 0.32);
-        const stock = new THREE.Mesh(stockGeo, woodMat);
-        stock.position.set(0, -0.045, 0.28);
-        stock.rotation.x = -Math.PI / 12;
-        stock.castShadow = true;
-        shotgunPivot.add(stock);
-
-        // 1d. Forend Grip (wood slide underneath barrel)
-        const forendGeo = new THREE.CylinderGeometry(0.038, 0.038, 0.25, 8, 1, false, 0, Math.PI);
-        const forend = new THREE.Mesh(forendGeo, woodMat);
-        forend.rotation.x = Math.PI / 2;
-        forend.rotation.y = Math.PI; // flip it down
-        forend.position.set(0, -0.025, -0.25);
-        forend.castShadow = true;
-        shotgunPivot.add(forend);
-
-        // Glowing trim accents (pink neon strips to match the cybernetic theme)
-        const stripL = new THREE.Mesh(new THREE.BoxGeometry(0.003, 0.018, 0.2), emissivePink);
-        stripL.position.set(-0.039, 0, 0);
-        shotgunPivot.add(stripL);
-
-        const stripR = new THREE.Mesh(new THREE.BoxGeometry(0.003, 0.018, 0.2), emissivePink);
-        stripR.position.set(0.039, 0, 0);
-        shotgunPivot.add(stripR);
-
-        // Muzzle Flash sprite (aligned with the front of the shotgun barrels)
-        const flashCanvas = document.createElement('canvas');
-        flashCanvas.width = 64;
-        flashCanvas.height = 64;
-        const fCtx = flashCanvas.getContext('2d');
-        const gradient = fCtx.createRadialGradient(32, 32, 0, 32, 32, 32);
-        gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
-        gradient.addColorStop(0.2, 'rgba(255, 0, 122, 0.8)');
-        gradient.addColorStop(0.5, 'rgba(168, 85, 247, 0.5)');
-        gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
-        fCtx.fillStyle = gradient;
-        fCtx.fillRect(0, 0, 64, 64);
-        
-        const flashTex = new THREE.CanvasTexture(flashCanvas);
-        const flashMat = new THREE.SpriteMaterial({
-            map: flashTex,
-            blending: THREE.AdditiveBlending,
-            transparent: true
-        });
-        muzzleFlash = new THREE.Sprite(flashMat);
-        muzzleFlash.scale.set(0.45, 0.45, 1);
-        muzzleFlash.position.set(0, 0.02, -0.825);
-        muzzleFlash.visible = false;
-        shotgunPivot.add(muzzleFlash);
-
-        // Muzzle light (flash room pink briefly)
-        muzzleLight = new THREE.PointLight(0xff007a, 0.0, 15);
-        muzzleLight.position.set(0, 0.02, -0.825);
-        muzzleLight.castShadow = false;
-        shotgunPivot.add(muzzleLight);
-
-        // ==================== 2. ROBOTIC FPS HANDS ====================
-        const handsGroup = new THREE.Group();
-        gunGroup.add(handsGroup);
-
-        const handMat = new THREE.MeshStandardMaterial({
-            color: 0xffffff, // Polished white carbon fiber hands
-            metalness: 0.2,
-            roughness: 0.1
-        });
-        const carbonMat = new THREE.MeshStandardMaterial({
-            color: 0x111111,
-            metalness: 0.8,
-            roughness: 0.5
-        });
-
-        // Right Arm (repositioned slightly for perfect graphics visibility)
-        const rArm = new THREE.Group();
-        rArm.position.set(0.12, -0.15, 0.28);
-        rArm.rotation.set(-0.2, -0.1, 0.05);
-        handsGroup.add(rArm);
-
-        const forearm = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.055, 0.45, 8), handMat);
-        forearm.rotation.x = Math.PI / 2.2;
-        forearm.castShadow = true;
-        rArm.add(forearm);
-
-        const armor = new THREE.Mesh(new THREE.BoxGeometry(0.065, 0.25, 0.075), carbonMat);
-        armor.position.set(0, 0, -0.05);
-        armor.rotation.x = Math.PI / 2.2;
-        rArm.add(armor);
-
-        const rWrist = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 8), emissivePink);
-        rWrist.position.set(0, 0.1, -0.18);
-        rArm.add(rWrist);
-
-        // Build Right mechanical hand
-        createDetailedHand(rArm, new THREE.Vector3(0, 0.1, -0.2), false);
-
-        // Left Arm (repositioned so it is clearly visible supporting the weapon)
-        const lArm = new THREE.Group();
-        lArm.position.set(-0.2, -0.08, 0.08);
-        lArm.rotation.set(0.15, 0.6, -0.2);
-        handsGroup.add(lArm);
-
-        const lForearm = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.055, 0.45, 8), handMat);
-        lForearm.rotation.x = Math.PI / 2.5;
-        lForearm.castShadow = true;
-        lArm.add(lForearm);
-
-        const lArmor = new THREE.Mesh(new THREE.BoxGeometry(0.065, 0.25, 0.075), carbonMat);
-        lArmor.position.set(0, 0, -0.05);
-        lArmor.rotation.x = Math.PI / 2.5;
-        lArm.add(lArmor);
-
-        const lWrist = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 8), emissivePink);
-        lWrist.position.set(0, 0.12, -0.16);
-        lArm.add(lWrist);
-
-        // Build Left mechanical hand
-        createDetailedHand(lArm, new THREE.Vector3(0, 0.12, -0.18), true);
     }
     
     function onKeyDown(e) {
-        if (!controls.isLocked) return;
+        if (!controls.isLocked && !isHovering) return;
         
         switch (e.code) {
             case 'KeyW': keys.w = true; break;
@@ -421,7 +311,7 @@ const Player = (() => {
     }
     
     function onMouseDown(e) {
-        if (!controls.isLocked) return;
+        if (!controls.isLocked && !isHovering) return;
         if (e.button === 0) {
             shoot();
         }
@@ -432,55 +322,61 @@ const Player = (() => {
         if (now - lastShotTime < shotCooldown) return;
         lastShotTime = now;
         
+        // Play the throwing animation
+        if (throwAction) {
+            throwAction.reset();
+            throwAction.paused = false;
+            throwAction.play();
+        }
+        
+        // Sound is disabled (Sound.playShoot returns early)
         Sound.playShoot();
-        
-        // Muzzle Flash
-        muzzleFlash.visible = true;
-        muzzleLight.intensity = 4.0;
-        muzzleFlash.rotation.z = Math.random() * Math.PI * 2;
-        
+
+        // Spawn energy orb after 100ms delay to align with the forward sweep of the throw
         setTimeout(() => {
-            muzzleFlash.visible = false;
-            muzzleLight.intensity = 0.0;
-        }, 40);
+            if (!cameraRef || !cameraRef.parent) return;
 
-        // Recoil
-        new TWEEN.Tween(gunGroup.position)
-            .to({ 
-                x: defaultGunPos.x + (Math.random() - 0.5) * 0.012,
-                y: defaultGunPos.y - 0.015,
-                z: defaultGunPos.z + 0.05
-            }, 30)
-            .yoyo(true)
-            .repeat(1)
-            .start();
-
-        // Spawn bullet (pink laser)
-        const bulletGeo = new THREE.SphereGeometry(0.08, 8, 8);
-        const bulletMat = new THREE.MeshBasicMaterial({
-            color: 0xff007a,
-            toneMapped: false
-        });
-        const bulletMesh = new THREE.Mesh(bulletGeo, bulletMat);
-        
-        const tipPos = new THREE.Vector3();
-        muzzleFlash.getWorldPosition(tipPos);
-        bulletMesh.position.copy(tipPos);
-        
-        const dir = new THREE.Vector3();
-        cameraRef.getWorldDirection(dir);
-        dir.x += (Math.random() - 0.5) * 0.012;
-        dir.y += (Math.random() - 0.5) * 0.012;
-        dir.normalize();
-        
-        cameraRef.parent.add(bulletMesh);
-        
-        bullets.push({
-            mesh: bulletMesh,
-            velocity: dir.multiplyScalar(bulletSpeed),
-            birthTime: now,
-            maxLife: 1500
-        });
+            // Spawn energy orb (neon-blue glowing sphere)
+            const orbGeo = new THREE.SphereGeometry(0.15, 16, 16);
+            const orbMat = new THREE.MeshStandardMaterial({
+                color: 0x0055ff, // Electric blue
+                emissive: 0x0055ff,
+                emissiveIntensity: 2.0,
+                roughness: 0.1,
+                metalness: 0.1
+            });
+            const orbMesh = new THREE.Mesh(orbGeo, orbMat);
+            
+            // Add point light to illuminate the surroundings in blue
+            const orbLight = new THREE.PointLight(0x0055ff, 2.5, 10);
+            orbLight.castShadow = false;
+            orbMesh.add(orbLight);
+            
+            // Start position: offset from camera center to align with the hand
+            const startPos = new THREE.Vector3();
+            startPos.copy(cameraRef.position);
+            
+            const offset = new THREE.Vector3(0.15, -0.2, -0.4); // slightly right, down, forward
+            offset.applyQuaternion(cameraRef.quaternion);
+            startPos.add(offset);
+            
+            orbMesh.position.copy(startPos);
+            
+            const dir = new THREE.Vector3();
+            cameraRef.getWorldDirection(dir);
+            dir.x += (Math.random() - 0.5) * 0.012;
+            dir.y += (Math.random() - 0.5) * 0.012;
+            dir.normalize();
+            
+            cameraRef.parent.add(orbMesh);
+            
+            bullets.push({
+                mesh: orbMesh,
+                velocity: dir.multiplyScalar(bulletSpeed),
+                birthTime: performance.now(),
+                maxLife: 1500
+            });
+        }, 100);
     }
     
     function activateAntiGravity() {
@@ -609,6 +505,28 @@ const Player = (() => {
     }
     
     function update(deltaTime) {
+        if (!window.__debugLogged && gunGroup) {
+            const hands = gunGroup.children.find(c => c.type === "Group");
+            if (hands) {
+                window.__debugLogged = true;
+                console.log("DEBUG_START");
+                console.log("DEBUG_HANDS_FOUND", hands.name);
+                const bbox = new THREE.Box3().setFromObject(hands);
+                console.log("DEBUG_HANDS_WORLD_BBOX_MIN:" + JSON.stringify(bbox.min));
+                console.log("DEBUG_HANDS_WORLD_BBOX_MAX:" + JSON.stringify(bbox.max));
+                hands.traverse(child => {
+                    if (child.isMesh) {
+                        child.geometry.computeBoundingBox();
+                        console.log(`DEBUG_MESH_NAME:"${child.name}"`);
+                        console.log(`DEBUG_MESH_LOCAL_BBOX:` + JSON.stringify(child.geometry.boundingBox));
+                        const wp = new THREE.Vector3();
+                        child.getWorldPosition(wp);
+                        console.log(`DEBUG_MESH_WORLD_POS:` + JSON.stringify(wp));
+                    }
+                });
+            }
+        }
+
         if (isGravityInverted) {
             antiGravDuration -= deltaTime;
             if (antiGravDuration <= 0) {
@@ -630,7 +548,7 @@ const Player = (() => {
             prevCamRotation.copy(cameraRef.rotation);
         }
 
-        if (controls.isLocked) {
+        if (controls.isLocked || isHovering) {
             const camDirection = new THREE.Vector3();
             cameraRef.getWorldDirection(camDirection);
             
@@ -697,10 +615,21 @@ const Player = (() => {
         
         const now = performance.now();
         
+        // Update throwing animation mixer
+        if (mixer) {
+            mixer.update(deltaTime);
+        }
+        
         for (let i = bullets.length - 1; i >= 0; i--) {
             const b = bullets[i];
             
             b.mesh.position.addScaledVector(b.velocity, deltaTime);
+            
+            // Rotate the thrown energy orbs
+            if (b.mesh) {
+                b.mesh.rotation.x += deltaTime * 6.0;
+                b.mesh.rotation.y += deltaTime * 4.0;
+            }
             
             let hit = false;
             
@@ -708,7 +637,7 @@ const Player = (() => {
             if (hitInsect) {
                 hit = true;
                 Enemies.damageEnemy(hitInsect, 15); // dealing 15 damage
-                Particles.spawnSparks(b.mesh.position, 0x00f0ff, 12);
+                Particles.spawnSparks(b.mesh.position, 0x0055ff, 12); // blue sparks on impact
             }
             
             if (!hit) {
@@ -718,7 +647,7 @@ const Player = (() => {
                 
                 if (px > 35 || py < -1 || py > 21 || pz > 35) {
                     hit = true;
-                    Particles.spawnSparks(b.mesh.position, 0x8892a6, 5);
+                    Particles.spawnSparks(b.mesh.position, 0x0055ff, 8); // blue sparks on wall hit
                 }
             }
             
@@ -748,6 +677,7 @@ const Player = (() => {
         getScore: () => score,
         getOrbCount: () => orbCount,
         getGravityInverted: () => isGravityInverted,
+        getGunGroup: () => gunGroup,
         reset,
         setCallbacks
     };

@@ -30,18 +30,18 @@ export const LEVELS = [
             [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
             [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
         ],
-        spawn: { x: 13, z: 13 },
+        spawn: { x: 6, z: 12 },
         exit: { x: 1, z: 1 },
         enemies: [
-            { x: -18, z: -18, hp: 60, name: "REAL NUMBERS GUARD" },
-            { x: 14, z: -10, hp: 80, name: "AP GUARD" },
-            { x: -14, z: 14, hp: 75, name: "LINEAR EQUATIONS GUARD" }
+            { x: -20, z: -20, hp: 60, name: "REAL NUMBERS GUARD" },
+            { x: 16, z: -16, hp: 80, name: "AP GUARD" },
+            { x: -24, z: 24, hp: 75, name: "LINEAR EQUATIONS GUARD" }
         ],
         vaults: [
             {
                 id: 0,
                 name: "Farmer's Field",
-                gridX: 3,
+                gridX: 4,
                 gridZ: 3,
                 type: "algebra",
                 problem: "Class 10 Real Numbers: Use Euclid's division algorithm to find the HCF of 135 and 225.",
@@ -69,7 +69,7 @@ export const LEVELS = [
             {
                 id: 2,
                 name: "Linear Trajectory",
-                gridX: 3,
+                gridX: 2,
                 gridZ: 11,
                 type: "algebra",
                 problem: "Class 10 Linear Equations: Solve 2x + 3y = 11 and 2x - 4y = -24. Find the value of variable y.",
@@ -156,7 +156,6 @@ export const LEVELS = [
     {
         name: "Level 3: Emerald Greenhouse",
         theme: "emerald_greenhouse",
-        modelPath: "/emerald_greenhouse.glb",
         floorColor: 0xecfdf5, // Pale green
         wallColor: 0xa7f3d0,  // Mint green
         lightColorLeft: 0x10b981, // Emerald green
@@ -228,7 +227,6 @@ export const LEVELS = [
     {
         name: "Level 4: Magma Reactor Core",
         theme: "magma_core",
-        modelPath: "/magma_core.glb",
         floorColor: 0xfff7ed, // Pale orange
         wallColor: 0xffedd5,  // Light orange
         lightColorLeft: 0xff4500, // Orange-red
@@ -305,7 +303,6 @@ export const LEVELS = [
     {
         name: "Level 5: Crossroads Terminal",
         theme: "crossroads",
-        modelPath: "/crossroads_terminal.glb",
         floorColor: 0xfef2f2, // Soft red
         wallColor: 0xfecaca,  // Lighter red
         lightColorLeft: 0xec4899, // Hot pink
@@ -384,7 +381,6 @@ export const LEVELS = [
     {
         name: "Level 6: Obsidian Abyss",
         theme: "obsidian_abyss",
-        modelPath: "/obsidian_abyss.glb",
         floorColor: 0xf5f3ff, // Light purple
         wallColor: 0xddd6fe,  // Pale purple
         lightColorLeft: 0x8b5cf6, // Violet
@@ -460,7 +456,6 @@ export const LEVELS = [
     {
         name: "Level 7: Hydro Station Vault",
         theme: "hydro_station",
-        modelPath: "/hydro_station.glb",
         floorColor: 0xf0fdf4, // Very pale green-blue
         wallColor: 0xdcfce7,  // Light mint
         lightColorLeft: 0x06b6d4, // Bright cyan
@@ -538,7 +533,6 @@ export const LEVELS = [
     {
         name: "Level 8: Radiant Sanctum",
         theme: "radiant_sanctum",
-        modelPath: "/radiant_sanctum.glb",
         floorColor: 0xfff1f2, // Pale rose
         wallColor: 0xffe4e6,  // Light rose
         lightColorLeft: 0xf43f5e, // Rose pink
@@ -614,7 +608,6 @@ export const LEVELS = [
     {
         name: "Level 9: Neon Necropolis",
         theme: "neon_necropolis",
-        modelPath: "/neon_necropolis.glb",
         floorColor: 0xf0fdfa, // Pale teal
         wallColor: 0xccfbf1,  // Light teal
         lightColorLeft: 0x0d9488, // Deep teal
@@ -693,7 +686,6 @@ export const LEVELS = [
     {
         name: "Level 10: The Vault Central Core",
         theme: "vault_core",
-        modelPath: "/central_core.glb",
         floorColor: 0xfbfbfe, // Pure white
         wallColor: 0xf1f1f6,  // White slate
         lightColorLeft: 0xff007a, // Radiant Pink

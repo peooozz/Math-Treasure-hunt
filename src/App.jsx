@@ -133,6 +133,13 @@ function App() {
     });
     const [devBypass, setDevBypass] = useState(false);
     const [activeLevelIndex, setActiveLevelIndex] = useState(0);
+    const [loadingProgress, setLoadingProgress] = useState(null);
+    
+    // Pause and Cursor state variables
+    const [isPaused, setIsPaused] = useState(false);
+    const [isHovered, setIsHovered] = useState(false);
+    const [isLocked, setIsLocked] = useState(false);
+    const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
     const handlePrevLevel = () => {
         setActiveLevelIndex((prev) => (prev > 0 ? prev - 1 : LEVEL_CARDS_DATA.length - 1));
@@ -201,6 +208,12 @@ function App() {
             },
             onNotification: handleNotification,
             onPrompt: setPrompt,
+            onLoadProgress: (percent) => {
+                setLoadingProgress(percent);
+                if (percent >= 100) {
+                    setTimeout(() => setLoadingProgress(null), 500);
+                }
+            },
             onOpenPuzzle: (vault) => {
                 setActivePuzzle(vault);
                 // Reset inputs dynamically based on vault details
@@ -226,6 +239,7 @@ function App() {
                             localStorage.setItem('math_vault_unlocked_level', newUnlocked);
                             return newUnlocked;
                         });
+                        setLoadingProgress(0);
                         GameEngine.nextLevel(next);
                         setScore(0);
                         return next;
@@ -233,6 +247,15 @@ function App() {
                 });
             }
         }, level);
+
+        const handleLockChange = () => {
+            if (document.pointerLockElement === canvasRef.current || document.pointerLockElement === document.body) {
+                setIsLocked(true);
+            } else {
+                setIsLocked(false);
+            }
+        };
+        document.addEventListener('pointerlockchange', handleLockChange);
 
         // Lock controls on start
         setTimeout(() => {
@@ -242,6 +265,7 @@ function App() {
         }, 300);
 
         return () => {
+            document.removeEventListener('pointerlockchange', handleLockChange);
             GameEngine.shutdown();
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -434,6 +458,7 @@ function App() {
 
     const handleEnterStation = () => {
         Sound.init();
+        setLoadingProgress(0);
         setGameStarted(true);
     };
 
@@ -451,6 +476,7 @@ function App() {
         setLevel(1);
         
         if (gameStarted) {
+            setLoadingProgress(0);
             GameEngine.restart(1);
             setTimeout(() => {
                 if (GameEngine.getControls()) {
@@ -458,6 +484,7 @@ function App() {
                 }
             }, 300);
         } else {
+            setLoadingProgress(0);
             setGameStarted(true);
         }
     };
@@ -467,6 +494,34 @@ function App() {
         if (GameEngine.getControls()) {
             GameEngine.getControls().lock();
         }
+    };
+
+    const handlePauseToggle = () => {
+        if (isPaused) {
+            GameEngine.resume();
+            setIsPaused(false);
+            setTimeout(() => {
+                if (GameEngine.getControls()) {
+                    GameEngine.getControls().lock();
+                }
+            }, 100);
+        } else {
+            GameEngine.pause();
+            setIsPaused(true);
+            if (GameEngine.getControls()) {
+                GameEngine.getControls().unlock();
+            }
+        }
+    };
+
+    const handleResume = () => {
+        GameEngine.resume();
+        setIsPaused(false);
+        setTimeout(() => {
+            if (GameEngine.getControls()) {
+                GameEngine.getControls().lock();
+            }
+        }, 100);
     };
 
     // Math Input Handlers
@@ -781,11 +836,56 @@ function App() {
             {/* Main Game Screen */}
             {gameStarted && (
                 <>
-                    <canvas id="game-canvas" ref={canvasRef}></canvas>
-                    <div id="crosshair"></div>
+                    <canvas 
+                        id="game-canvas" 
+                        ref={canvasRef}
+                        className={(!isLocked && isHovered) ? 'hover-unlocked' : ''}
+                        onMouseEnter={() => setIsHovered(true)}
+                        onMouseLeave={() => setIsHovered(false)}
+                        onMouseMove={(e) => setMousePos({ x: e.clientX, y: e.clientY })}
+                    ></canvas>
+                    <div 
+                        id="crosshair"
+                        style={(!isLocked && isHovered) ? {
+                            left: `${mousePos.x}px`,
+                            top: `${mousePos.y}px`,
+                            transform: 'translate(-50%, -50%)',
+                            position: 'fixed'
+                        } : {
+                            left: '50%',
+                            top: '50%',
+                            transform: 'translate(-50%, -50%)',
+                            position: 'absolute'
+                        }}
+                    ></div>
 
                     {/* HUD Overlay */}
                     <div id="hud" className={gravityInverted ? 'gravity-inverted' : ''}>
+                        {/* Top Center Pause Control */}
+                        <button 
+                            className="hud-pause-btn font-orbitron" 
+                            style={{ 
+                                pointerEvents: 'auto',
+                                position: 'absolute',
+                                top: '20px',
+                                left: '50%',
+                                transform: 'translateX(-50%)',
+                                zIndex: 100,
+                                background: 'var(--bg-glass)',
+                                border: '1px solid var(--border-glass)',
+                                color: 'var(--color-primary)',
+                                textShadow: 'var(--glow-cyan)',
+                                padding: '8px 16px',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                fontWeight: 'bold',
+                                fontSize: '0.85rem'
+                            }}
+                            onClick={handlePauseToggle}
+                        >
+                            {isPaused ? '▶ RESUME' : '⏸ PAUSE'}
+                        </button>
+                        
                         {/* Stats Panel */}
                         <div className="hud-panel left-panel">
                             <div className="stat-row">
@@ -871,6 +971,18 @@ function App() {
                         {prompt || notification}
                     </div>
                 </>
+            )}
+
+
+            {/* Pause Screen Overlay */}
+            {isPaused && (
+                <div id="pause-screen" className="overlay-screen active" style={{ zIndex: 9999 }}>
+                    <div className="glass-container menu-box">
+                        <h1 className="game-title font-orbitron" style={{ color: 'var(--color-primary)' }}>GAME PAUSED</h1>
+                        <p className="game-subtitle font-rajdhani">Click Resume or hit Pause to return to the mission.</p>
+                        <button onClick={handleResume} className="glow-button font-orbitron" style={{ width: '200px' }}>RESUME</button>
+                    </div>
+                </div>
             )}
 
             {/* Game Over Screen */}
@@ -1078,6 +1190,30 @@ function App() {
                             </div>
                         </div>
 
+                    </div>
+                </div>
+            )}
+            
+            {/* Loading Screen Overlay */}
+            {loadingProgress !== null && (
+                <div id="loading-screen" className="overlay-screen active">
+                    <div className="glass-container loading-box">
+                        <div className="loading-dots-bg"></div>
+                        <h1 className="loading-title font-orbitron">INITIALIZING SYSTEMS</h1>
+                        <p className="loading-subtitle font-orbitron">LOADING LEVEL {level}</p>
+                        
+                        <div className="progress-container">
+                            <div className="progress-bar-glow"></div>
+                            <div className="progress-bar-fill" style={{ width: `${loadingProgress}%` }}></div>
+                        </div>
+                        
+                        <div className="progress-text font-rajdhani">
+                            {loadingProgress}% OF ASSETS SECURED
+                        </div>
+                        
+                        <div className="loading-tip font-rajdhani">
+                            <span className="tip-prefix font-orbitron">TIP:</span> Decrypt vaults to get anti-gravity orbs and escape keys.
+                        </div>
                     </div>
                 </div>
             )}

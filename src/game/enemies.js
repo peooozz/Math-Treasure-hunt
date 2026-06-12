@@ -17,6 +17,7 @@ const Enemies = (() => {
     let currentLevelIndex = 1;
     let enemyModelTemplate = null;
     let isModelLoading = false;
+    let frameCount = 0;
     
     // Combat balance parameters (slower fireballs, lighter damage)
     const fireballSpeed = 10.5;
@@ -695,6 +696,7 @@ const Enemies = (() => {
 
     function update(deltaTime, playerPos, camera) {
         const timeNow = performance.now() * 0.001;
+        frameCount++;
         
         // 1. Update Insects (Crawling, vibrating antennae, pulsing core)
         for (let i = activeEnemies.length - 1; i >= 0; i--) {
@@ -781,10 +783,18 @@ const Enemies = (() => {
                 const lookAheadZ = nextZ + enemy.dirZ * margin;
                 
                 if (checkGridCollision(lookAheadX, lookAheadZ)) {
-                    // Reverse direction
-                    enemy.dirX = -enemy.dirX;
-                    enemy.dirZ = -enemy.dirZ;
-                    enemy.speed = -enemy.speed;
+                    if (lvl.theme === "arabic_city") {
+                        // In open city environment, turn in a new random direction to navigate streets perfectly
+                        const angle = Math.random() * Math.PI * 2;
+                        enemy.dirX = Math.sin(angle);
+                        enemy.dirZ = Math.cos(angle);
+                        enemy.speed = Math.abs(enemy.speed);
+                    } else {
+                        // Reverse direction in tight grid mazes
+                        enemy.dirX = -enemy.dirX;
+                        enemy.dirZ = -enemy.dirZ;
+                        enemy.speed = -enemy.speed;
+                    }
                 } else {
                     enemy.mesh.position.x = nextX;
                     enemy.mesh.position.z = nextZ;
@@ -799,8 +809,11 @@ const Enemies = (() => {
             let currentY = enemy.startY;
             const lvl = LEVELS[currentLevelIndex - 1];
             if (lvl && lvl.modelPath) {
-                const gy = getGroundHeight(enemy.mesh.position.x, enemy.mesh.position.z);
-                currentY = gy + 0.8;
+                // Decimate raycasting to once every 10 frames per enemy
+                if (enemy.lastGroundY === undefined || (frameCount + enemy.id) % 10 === 0) {
+                    enemy.lastGroundY = getGroundHeight(enemy.mesh.position.x, enemy.mesh.position.z);
+                }
+                currentY = enemy.lastGroundY + 0.8;
             }
             enemy.mesh.position.y = currentY + Math.sin(timeNow * 6) * 0.06;
 

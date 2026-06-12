@@ -5,9 +5,8 @@ export const Sound = (() => {
     let ctx = null;
 
     function init() {
-        if (!ctx) {
-            ctx = new (window.AudioContext || window.webkitAudioContext)();
-        }
+        // Sound disabled per user request
+        return;
     }
 
     function playShoot() {
@@ -17,18 +16,24 @@ export const Sound = (() => {
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
         
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(600, ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(150, ctx.currentTime + 0.12);
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(800, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(200, ctx.currentTime + 0.25);
         
-        gain.gain.setValueAtTime(0.12, ctx.currentTime);
-        gain.gain.linearRampToValueAtTime(0.01, ctx.currentTime + 0.12);
+        gain.gain.setValueAtTime(0.20, ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.001, ctx.currentTime + 0.25);
         
-        osc.connect(gain);
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(1200, ctx.currentTime);
+        filter.frequency.exponentialRampToValueAtTime(400, ctx.currentTime + 0.25);
+        
+        osc.connect(filter);
+        filter.connect(gain);
         gain.connect(ctx.destination);
         
         osc.start();
-        osc.stop(ctx.currentTime + 0.12);
+        osc.stop(ctx.currentTime + 0.25);
     }
 
     // Creepy high-frequency insect screech/hiss sound when firing

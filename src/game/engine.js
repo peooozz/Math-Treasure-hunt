@@ -13,6 +13,111 @@ import { Sound } from './sound';
 import { LEVELS } from './levels';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
+function getComponentBoundingBoxes(geometry) {
+    if (!geometry) return [];
+    const posAttr = geometry.getAttribute('position');
+    if (!posAttr) return [];
+    
+    const indexAttr = geometry.index;
+    const positions = posAttr.array;
+    const numVertices = posAttr.count;
+    const numFaces = indexAttr ? indexAttr.count / 3 : numVertices / 3;
+    
+    const parent = new Int32Array(numFaces);
+    for (let i = 0; i < numFaces; i++) parent[i] = i;
+    
+    function find(i) {
+        let root = i;
+        while (parent[root] !== root) root = parent[root];
+        let curr = i;
+        while (curr !== root) {
+            let nxt = parent[curr];
+            parent[curr] = root;
+            curr = nxt;
+        }
+        return root;
+    }
+    
+    function union(i, j) {
+        const rI = find(i);
+        const rJ = find(j);
+        if (rI !== rJ) parent[rI] = rJ;
+    }
+    
+    const keyToFaces = new Map();
+    for (let f = 0; f < numFaces; f++) {
+        let v0 = indexAttr ? indexAttr.array[f * 3] : f * 3;
+        let v1 = indexAttr ? indexAttr.array[f * 3 + 1] : f * 3 + 1;
+        let v2 = indexAttr ? indexAttr.array[f * 3 + 2] : f * 3 + 2;
+        
+        const vertices = [v0, v1, v2];
+        for (const v of vertices) {
+            const px = positions[v * 3];
+            const py = positions[v * 3 + 1];
+            const pz = positions[v * 3 + 2];
+            // Spatial merge rounding to 1 decimal place (10cm tolerance) to merge shared coordinates
+            const key = `${Math.round(px * 10)},${Math.round(py * 10)},${Math.round(pz * 10)}`;
+            let list = keyToFaces.get(key);
+            if (!list) {
+                list = [];
+                keyToFaces.set(key, list);
+            }
+            list.push(f);
+        }
+    }
+    
+    for (const [key, faces] of keyToFaces.entries()) {
+        if (faces.length > 1) {
+            const first = faces[0];
+            for (let i = 1; i < faces.length; i++) {
+                union(first, faces[i]);
+            }
+        }
+    }
+    
+    const componentFaces = new Map();
+    for (let f = 0; f < numFaces; f++) {
+        const r = find(f);
+        let list = componentFaces.get(r);
+        if (!list) {
+            list = [];
+            componentFaces.set(r, list);
+        }
+        list.push(f);
+    }
+    
+    const boxes = [];
+    for (const [root, faces] of componentFaces.entries()) {
+        let minX = Infinity, minY = Infinity, minZ = Infinity;
+        let maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity;
+        
+        for (const f of faces) {
+            let v0 = indexAttr ? indexAttr.array[f * 3] : f * 3;
+            let v1 = indexAttr ? indexAttr.array[f * 3 + 1] : f * 3 + 1;
+            let v2 = indexAttr ? indexAttr.array[f * 3 + 2] : f * 3 + 2;
+            
+            const vertices = [v0, v1, v2];
+            for (const v of vertices) {
+                const px = positions[v * 3];
+                const py = positions[v * 3 + 1];
+                const pz = positions[v * 3 + 2];
+                
+                if (px < minX) minX = px;
+                if (py < minY) minY = py;
+                if (pz < minZ) minZ = pz;
+                if (px > maxX) maxX = px;
+                if (py > maxY) maxY = py;
+                if (pz > maxZ) maxZ = pz;
+            }
+        }
+        boxes.push({
+            min: new THREE.Vector3(minX, minY, minZ),
+            max: new THREE.Vector3(maxX, maxY, maxZ)
+        });
+    }
+    return boxes;
+}
+
 const GameEngine = (() => {
     let currentLevelIndex = 1;
     let mazeMeshes = [];
@@ -26,6 +131,9 @@ const GameEngine = (() => {
     let navArrowMesh = null;
     let buildingFootprints = [];
     
+    const modelCache = new Map();
+    const loadingManager = new THREE.LoadingManager();
+    
     let uiCallbacks = {
         onHPChange: () => {},
         onScoreChange: () => {},
@@ -36,6 +144,29 @@ const GameEngine = (() => {
         onGameOver: () => {},
         onVictory: () => {},
         onNextLevel: () => {}
+    };
+
+    loadingManager.onStart = (url, itemsLoaded, itemsTotal) => {
+        if (uiCallbacks && uiCallbacks.onLoadProgress) {
+            uiCallbacks.onLoadProgress(0);
+        }
+    };
+    
+    loadingManager.onProgress = (url, itemsLoaded, itemsTotal) => {
+        const percent = Math.round((itemsLoaded / itemsTotal) * 100);
+        if (uiCallbacks && uiCallbacks.onLoadProgress) {
+            uiCallbacks.onLoadProgress(percent);
+        }
+    };
+    
+    loadingManager.onLoad = () => {
+        if (uiCallbacks && uiCallbacks.onLoadProgress) {
+            uiCallbacks.onLoadProgress(100);
+        }
+    };
+    
+    loadingManager.onError = (url) => {
+        console.warn(`Error loading asset: ${url}`);
     };
 
     let scene;
@@ -49,6 +180,17 @@ const GameEngine = (() => {
         if (isRunning) return;
         isRunning = true;
         uiCallbacks = { ...uiCallbacks, ...callbacks };
+
+        // Preload hands GLB model so it's cached and ready
+        const handsPath = "/fps_arms_throwing.glb";
+        if (!modelCache.has(handsPath)) {
+            const loader = new GLTFLoader(loadingManager);
+            loader.load(handsPath, (gltf) => {
+                modelCache.set(handsPath, gltf);
+            }, undefined, (err) => {
+                console.error("Failed to preload hands GLB:", err);
+            });
+        }
         currentLevelIndex = levelIndex;
 
         const lvl = LEVELS[currentLevelIndex - 1];
@@ -355,6 +497,46 @@ const GameEngine = (() => {
         mazePhysicsBodies.push(w4);
 
         // 5. BUILD PROCEDURAL MAZE WALLS AND DECORATIONS
+        let wallCount = 0;
+        let pillarCount = 0;
+        if (showFallbackRoom && lvl && lvl.grid) {
+            for (let r = 0; r < lvl.grid.length; r++) {
+                for (let c = 0; c < lvl.grid[r].length; c++) {
+                    const cellType = lvl.grid[r][c];
+                    if (cellType === 1) wallCount++;
+                    if (cellType === 2) pillarCount++;
+                }
+            }
+        }
+
+        const wallGeo = new THREE.BoxGeometry(4, 6, 4);
+        const pillarGeo = new THREE.BoxGeometry(4, 20, 4);
+        let wallInstanced = null;
+        let pillarInstanced = null;
+
+        if (wallCount > 0) {
+            wallInstanced = new THREE.InstancedMesh(wallGeo, wallMat, wallCount);
+            wallInstanced.castShadow = true;
+            wallInstanced.receiveShadow = true;
+            scene.add(wallInstanced);
+            mazeMeshes.push(wallInstanced);
+            if (showFallbackRoom) proceduralMeshes.push(wallInstanced);
+        }
+
+        if (pillarCount > 0) {
+            pillarInstanced = new THREE.InstancedMesh(pillarGeo, wallMat, pillarCount);
+            pillarInstanced.castShadow = true;
+            pillarInstanced.receiveShadow = true;
+            scene.add(pillarInstanced);
+            mazeMeshes.push(pillarInstanced);
+            if (showFallbackRoom) proceduralMeshes.push(pillarInstanced);
+        }
+
+        let wallIdx = 0;
+        let pillarIdx = 0;
+        const tempObject = new THREE.Object3D();
+        const lineVertices = [];
+
         if (showFallbackRoom && lvl && lvl.grid) {
             for (let r = 0; r < lvl.grid.length; r++) {
                 for (let c = 0; c < lvl.grid[r].length; c++) {
@@ -363,13 +545,28 @@ const GameEngine = (() => {
                     const worldZ = -halfD + r * 4 + 2;
                     
                     if (cellType === 1) {
-                        // Wall (height 6, on floor)
-                        createMazeWall(worldX, 3, worldZ, 4, 6, 4, lvl.lightColorLeft || 0xff007a, true);
+                        tempObject.position.set(worldX, 3, worldZ);
+                        tempObject.updateMatrix();
+                        wallInstanced.setMatrixAt(wallIdx++, tempObject.matrix);
+                        
+                        pushBoxOutlineVertices(lineVertices, worldX, 3, worldZ, 4, 6, 4);
+                        
+                        const body = Physics.createBox(worldX, 3, worldZ, 4, 6, 4, 0);
+                        body.collisionFilterGroup = 2;
+                        mazePhysicsBodies.push(body);
+                        proceduralPhysicsBodies.push(body);
                     } else if (cellType === 2) {
-                        // Pillar (height 20, ceiling high)
-                        createMazeWall(worldX, 10, worldZ, 4, 20, 4, lvl.lightColorLeft || 0xff007a, true);
+                        tempObject.position.set(worldX, 10, worldZ);
+                        tempObject.updateMatrix();
+                        pillarInstanced.setMatrixAt(pillarIdx++, tempObject.matrix);
+                        
+                        pushBoxOutlineVertices(lineVertices, worldX, 10, worldZ, 4, 20, 4);
+                        
+                        const body = Physics.createBox(worldX, 10, worldZ, 4, 20, 4, 0);
+                        body.collisionFilterGroup = 2;
+                        mazePhysicsBodies.push(body);
+                        proceduralPhysicsBodies.push(body);
                     } else if (cellType === 0) {
-                        // Procedurally spawn decorations in empty cells (12% chance)
                         if (!(r === lvl.spawn.z && c === lvl.spawn.x) && !(r === lvl.exit.z && c === lvl.exit.x)) {
                             const seed = Math.sin(r * 12.9898 + c * 78.233) * 43758.5453;
                             const rand = seed - Math.floor(seed);
@@ -382,17 +579,24 @@ const GameEngine = (() => {
             }
         }
 
+        if (lineVertices.length > 0) {
+            const lineGeo = new THREE.BufferGeometry();
+            lineGeo.setAttribute('position', new THREE.Float32BufferAttribute(lineVertices, 3));
+            const lineSegments = new THREE.LineSegments(
+                lineGeo, 
+                new THREE.LineBasicMaterial({ color: lvl.lightColorLeft || 0xff007a })
+            );
+            scene.add(lineSegments);
+            mazeMeshes.push(lineSegments);
+            if (showFallbackRoom) proceduralMeshes.push(lineSegments);
+        }
+
         // 6. ASYNCHRONOUS CUSTOM 3D ENVIRONMENT LOADER
         if (lvl.modelPath) {
             const loadingLevelIndex = currentLevelIndex;
-            const loader = new GLTFLoader();
-            loader.load(lvl.modelPath, (gltf) => {
-                // If level changed or game shut down, dispose loaded resources and return
+            
+            const handleGltfLoaded = (gltf) => {
                 if (!isRunning || currentLevelIndex !== loadingLevelIndex) {
-                    gltf.scene.traverse(child => {
-                        if (child.geometry) child.geometry.dispose();
-                        if (child.material) child.material.dispose();
-                    });
                     return;
                 }
 
@@ -421,8 +625,14 @@ const GameEngine = (() => {
                 proceduralPhysicsBodies = [];
 
                 // Load custom GLTF scene
-                const model = gltf.scene;
+                const model = gltf.scene.clone();
                 model.name = "environment_model";
+                
+                // Align Level 1 map vertically (rotate to Y-up)
+                if (lvl.theme === "arabic_city") {
+                    model.rotation.x = -Math.PI / 2;
+                }
+                
                 scene.add(model);
                 mazeMeshes.push(model);
 
@@ -444,12 +654,9 @@ const GameEngine = (() => {
                     -center.z * scaleFactor
                 );
 
-                // Clear previous building footprints
                 buildingFootprints = [];
-
                 const isOpenWorld = !!lvl.openWorld;
 
-                // Generate static physics colliders for structural elements
                 model.traverse(child => {
                     if (child.isMesh) {
                         child.castShadow = false;
@@ -457,7 +664,6 @@ const GameEngine = (() => {
 
                         const name = child.name.toLowerCase();
 
-                        // Skip sky, dome, cloud meshes always
                         if (
                             name.includes('sky') || 
                             name.includes('dome') || 
@@ -466,7 +672,6 @@ const GameEngine = (() => {
                             return;
                         }
 
-                        // For open-world levels, only skip truly flat ground surfaces
                         if (isOpenWorld) {
                             if (
                                 name.includes('ground') || 
@@ -476,7 +681,6 @@ const GameEngine = (() => {
                                 return;
                             }
                         } else {
-                            // For grid-based levels, skip floors/streets/roads
                             if (
                                 name.includes('ground') || 
                                 name.includes('floor') || 
@@ -491,97 +695,171 @@ const GameEngine = (() => {
                             }
                         }
 
-                        const meshBox = new THREE.Box3().setFromObject(child);
-                        const meshSize = new THREE.Vector3();
-                        meshBox.getSize(meshSize);
-                        const meshCenter = new THREE.Vector3();
-                        meshBox.getCenter(meshCenter);
-
-                        // Size limits: skip flat details and huge encompassing meshes
-                        const maxLimit = isOpenWorld ? 60 : 35;
-                        const minHeight = isOpenWorld ? 0.5 : 0.25;
-                        if (meshSize.y < minHeight || meshSize.x > maxLimit || meshSize.z > maxLimit) {
-                            return;
-                        }
-
-                        // For open-world: only clear a tiny radius around spawn/exit (not vaults/enemies)
-                        if (isOpenWorld) {
-                            const spawnX = -halfW + lvl.spawn.x * 4 + 2;
-                            const spawnZ = -halfD + lvl.spawn.z * 4 + 2;
-                            const exitX = -halfW + lvl.exit.x * 4 + 2;
-                            const exitZ = -halfD + lvl.exit.z * 4 + 2;
+                        if (lvl.theme === "arabic_city") {
+                            // Split combined building meshes using DSU to get separate components
+                            child.updateMatrixWorld(true);
+                            const localBoxes = getComponentBoundingBoxes(child.geometry);
                             
-                            const spawnInside = spawnX >= meshBox.min.x - 0.5 && spawnX <= meshBox.max.x + 0.5 &&
-                                                spawnZ >= meshBox.min.z - 0.5 && spawnZ <= meshBox.max.z + 0.5;
-                            const exitInside = exitX >= meshBox.min.x - 0.5 && exitX <= meshBox.max.x + 0.5 &&
-                                               exitZ >= meshBox.min.z - 0.5 && exitZ <= meshBox.max.z + 0.5;
-                            
-                            if (spawnInside || exitInside) {
+                            localBoxes.forEach(lbox => {
+                                const corners = [
+                                    new THREE.Vector3(lbox.min.x, lbox.min.y, lbox.min.z),
+                                    new THREE.Vector3(lbox.max.x, lbox.min.y, lbox.min.z),
+                                    new THREE.Vector3(lbox.min.x, lbox.max.y, lbox.min.z),
+                                    new THREE.Vector3(lbox.max.x, lbox.max.y, lbox.min.z),
+                                    new THREE.Vector3(lbox.min.x, lbox.min.y, lbox.max.z),
+                                    new THREE.Vector3(lbox.max.x, lbox.min.y, lbox.max.z),
+                                    new THREE.Vector3(lbox.min.x, lbox.max.y, lbox.max.z),
+                                    new THREE.Vector3(lbox.max.x, lbox.max.y, lbox.max.z)
+                                ];
+                                
+                                let wMinX = Infinity, wMinY = Infinity, wMinZ = Infinity;
+                                let wMaxX = -Infinity, wMaxY = -Infinity, wMaxZ = -Infinity;
+                                
+                                corners.forEach(c => {
+                                    c.applyMatrix4(child.matrixWorld);
+                                    if (c.x < wMinX) wMinX = c.x;
+                                    if (c.y < wMinY) wMinY = c.y;
+                                    if (c.z < wMinZ) wMinZ = c.z;
+                                    if (c.x > wMaxX) wMaxX = c.x;
+                                    if (c.y > wMaxY) wMaxY = c.y;
+                                    if (c.z > wMaxZ) wMaxZ = c.z;
+                                });
+                                
+                                const meshSize = new THREE.Vector3(wMaxX - wMinX, wMaxY - wMinY, wMaxZ - wMinZ);
+                                const meshCenter = new THREE.Vector3((wMaxX + wMinX)/2, (wMaxY + wMinY)/2, (wMaxZ + wMinZ)/2);
+                                
+                                const minHeight = 0.5;
+                                const minSize = 2.5; // Filter out small items/decorations
+                                const maxLimit = 35; // Filter out ground/street plates
+                                
+                                if (meshSize.y < minHeight || meshSize.x < minSize || meshSize.z < minSize || meshSize.x > maxLimit || meshSize.z > maxLimit) {
+                                    return;
+                                }
+                                
+                                const body = Physics.createBox(
+                                    meshCenter.x,
+                                    meshCenter.y,
+                                    meshCenter.z,
+                                    meshSize.x * 0.9, // Shrink slightly to keep streets open
+                                    meshSize.y,
+                                    meshSize.z * 0.9,
+                                    0
+                                );
+                                body.collisionFilterGroup = 2;
+                                mazePhysicsBodies.push(body);
+                                
+                                buildingFootprints.push({
+                                    x: meshCenter.x,
+                                    z: meshCenter.z,
+                                    halfW: meshSize.x / 2,
+                                    halfD: meshSize.z / 2
+                                });
+                            });
+                        } else {
+                            // Standard box bounds for other levels
+                            const meshBox = new THREE.Box3().setFromObject(child);
+                            const meshSize = new THREE.Vector3();
+                            meshBox.getSize(meshSize);
+                            const meshCenter = new THREE.Vector3();
+                            meshBox.getCenter(meshCenter);
+
+                            const maxLimit = isOpenWorld ? 60 : 35;
+                            const minHeight = isOpenWorld ? 0.5 : 0.25;
+                            if (meshSize.y < minHeight || meshSize.x > maxLimit || meshSize.z > maxLimit) {
                                 return;
                             }
-                        } else {
-                            // Grid-based levels: skip colliders blocking critical points
-                            const criticalPoints = [
-                                { x: -halfW + lvl.spawn.x * 4 + 2, z: -halfD + lvl.spawn.z * 4 + 2 },
-                                { x: -halfW + lvl.exit.x * 4 + 2, z: -halfD + lvl.exit.z * 4 + 2 }
-                            ];
-                            if (lvl.vaults) {
-                                lvl.vaults.forEach(v => {
-                                    criticalPoints.push({
-                                        x: -halfW + v.gridX * 4 + 2,
-                                        z: -halfD + v.gridZ * 4 + 2
+
+                            if (isOpenWorld) {
+                                const spawnX = -halfW + lvl.spawn.x * 4 + 2;
+                                const spawnZ = -halfD + lvl.spawn.z * 4 + 2;
+                                const exitX = -halfW + lvl.exit.x * 4 + 2;
+                                const exitZ = -halfD + lvl.exit.z * 4 + 2;
+                                
+                                const spawnInside = spawnX >= meshBox.min.x - 0.5 && spawnX <= meshBox.max.x + 0.5 &&
+                                                     spawnZ >= meshBox.min.z - 0.5 && spawnZ <= meshBox.max.z + 0.5;
+                                const exitInside = exitX >= meshBox.min.x - 0.5 && exitX <= meshBox.max.x + 0.5 &&
+                                                   exitZ >= meshBox.min.z - 0.5 && exitZ <= meshBox.max.z + 0.5;
+                                
+                                if (spawnInside || exitInside) {
+                                    return;
+                                }
+                            } else {
+                                const criticalPoints = [
+                                    { x: -halfW + lvl.spawn.x * 4 + 2, z: -halfD + lvl.spawn.z * 4 + 2 },
+                                    { x: -halfW + lvl.exit.x * 4 + 2, z: -halfD + lvl.exit.z * 4 + 2 }
+                                ];
+                                if (lvl.vaults) {
+                                    lvl.vaults.forEach(v => {
+                                        criticalPoints.push({
+                                            x: -halfW + v.gridX * 4 + 2,
+                                            z: -halfD + v.gridZ * 4 + 2
+                                        });
                                     });
-                                });
-                            }
-                            if (lvl.enemies) {
-                                lvl.enemies.forEach(e => {
-                                    criticalPoints.push({ x: e.x, z: e.z });
-                                });
-                            }
-                            let intersectsCritical = false;
-                            for (const pt of criticalPoints) {
-                                if (
-                                    pt.x >= meshBox.min.x - 1.5 && 
-                                    pt.x <= meshBox.max.x + 1.5 &&
-                                    pt.z >= meshBox.min.z - 1.5 && 
-                                    pt.z <= meshBox.max.z + 1.5
-                                ) {
-                                    intersectsCritical = true;
-                                    break;
+                                }
+                                if (lvl.enemies) {
+                                    lvl.enemies.forEach(e => {
+                                        criticalPoints.push({ x: e.x, z: e.z });
+                                    });
+                                }
+                                let intersectsCritical = false;
+                                for (const pt of criticalPoints) {
+                                    if (
+                                        pt.x >= meshBox.min.x - 1.5 && 
+                                        pt.x <= meshBox.max.x + 1.5 &&
+                                        pt.z >= meshBox.min.z - 1.5 && 
+                                        pt.z <= meshBox.max.z + 1.5
+                                    ) {
+                                        intersectsCritical = true;
+                                        break;
+                                    }
+                                }
+                                if (intersectsCritical) {
+                                    return;
                                 }
                             }
-                            if (intersectsCritical) {
-                                return;
+
+                            const body = Physics.createBox(
+                                meshCenter.x,
+                                meshCenter.y,
+                                meshCenter.z,
+                                meshSize.x,
+                                meshSize.y,
+                                meshSize.z,
+                                0
+                            );
+                            body.collisionFilterGroup = 2;
+                            mazePhysicsBodies.push(body);
+
+                            if (isOpenWorld) {
+                                buildingFootprints.push({
+                                    x: meshCenter.x,
+                                    z: meshCenter.z,
+                                    halfW: meshSize.x / 2,
+                                    halfD: meshSize.z / 2
+                                });
                             }
-                        }
-
-                        const body = Physics.createBox(
-                            meshCenter.x,
-                            meshCenter.y,
-                            meshCenter.z,
-                            meshSize.x,
-                            meshSize.y,
-                            meshSize.z,
-                            0
-                        );
-                        body.collisionFilterGroup = 2;
-                        mazePhysicsBodies.push(body);
-
-                        // Store top-down footprint for minimap
-                        if (isOpenWorld) {
-                            buildingFootprints.push({
-                                x: meshCenter.x,
-                                z: meshCenter.z,
-                                halfW: meshSize.x / 2,
-                                halfD: meshSize.z / 2
-                            });
                         }
                     }
                 });
-            }, undefined, (err) => {
-                // If model is missing or fails, log warning and fallback to procedural maze
-                console.warn(`Custom 3D environment model not found/failed to load at ${lvl.modelPath}. Running level in procedural fallback mode.`, err);
-            });
+            };
+
+            if (modelCache.has(lvl.modelPath)) {
+                if (uiCallbacks && uiCallbacks.onLoadProgress) {
+                    uiCallbacks.onLoadProgress(100);
+                }
+                handleGltfLoaded(modelCache.get(lvl.modelPath));
+            } else {
+                const loader = new GLTFLoader(loadingManager);
+                loader.load(lvl.modelPath, (gltf) => {
+                    modelCache.set(lvl.modelPath, gltf);
+                    handleGltfLoaded(gltf);
+                }, undefined, (err) => {
+                    console.warn(`Custom 3D environment model not found/failed to load at ${lvl.modelPath}. Running level in procedural fallback mode.`, err);
+                    if (uiCallbacks && uiCallbacks.onLoadProgress) {
+                        uiCallbacks.onLoadProgress(100);
+                    }
+                });
+            }
         }
 
         // 7. Spawn insect guards
@@ -1064,6 +1342,18 @@ const GameEngine = (() => {
         };
     }
 
+    function pause() {
+        isRunning = false;
+        cancelAnimationFrame(frameId);
+    }
+
+    function resume() {
+        if (isRunning) return;
+        isRunning = true;
+        clock.getDelta(); // Reset clock delta to avoid massive frame jumps
+        animate();
+    }
+
     function shutdown() {
         isRunning = false;
         cancelAnimationFrame(frameId);
@@ -1079,14 +1369,38 @@ const GameEngine = (() => {
         }
     }
 
+    function pushBoxOutlineVertices(arr, x, y, z, w, h, d) {
+        const hw = w / 2;
+        const hh = h / 2;
+        const hd = d / 2;
+        const edges = [
+            x-hw, y-hh, z-hd, x+hw, y-hh, z-hd,
+            x+hw, y-hh, z-hd, x+hw, y-hh, z+hd,
+            x+hw, y-hh, z+hd, x-hw, y-hh, z+hd,
+            x-hw, y-hh, z+hd, x-hw, y-hh, z-hd,
+            x-hw, y+hh, z-hd, x+hw, y+hh, z-hd,
+            x+hw, y+hh, z-hd, x+hw, y+hh, z+hd,
+            x+hw, y+hh, z+hd, x-hw, y+hh, z+hd,
+            x-hw, y+hh, z+hd, x-hw, y+hh, z-hd,
+            x-hw, y-hh, z-hd, x-hw, y+hh, z-hd,
+            x+hw, y-hh, z-hd, x+hw, y+hh, z-hd,
+            x+hw, y-hh, z+hd, x+hw, y+hh, z+hd,
+            x-hw, y-hh, z+hd, x-hw, y+hh, z+hd
+        ];
+        arr.push(...edges);
+    }
+
     return {
         start,
         interact,
         restart,
         nextLevel,
+        pause,
+        resume,
         shutdown,
         getControls: () => Player.getControls(),
         getPlayer: () => Player,
+        getCachedModel: (path) => modelCache.get(path),
         getMinimapData
     };
 })();
