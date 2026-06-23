@@ -83,78 +83,7 @@ export const LEVELS = [
         ]
     },
     {
-        name: "Level 2: Cyberpunk City",
-        theme: "cyberpunk_city",
-        modelPath: "/cyberpunk_city.glb",
-        floorColor: 0x09090b, // Deep black
-        wallColor: 0x1e293b,  // Dark slate
-        lightColorLeft: 0xff007a, // Neon hot pink
-        lightColorRight: 0x00f0ff, // Cyber cyan
-        fogColor: 0x09090b,
-        fogDensity: 0.015,
-        grid: [
-            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-            [1,0,0,0,1,0,0,0,0,0,1,0,0,0,1],
-            [1,0,2,0,1,0,2,2,2,0,1,0,2,0,1],
-            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-            [1,1,1,0,1,1,1,0,1,1,1,0,1,1,1],
-            [1,0,0,0,1,0,0,0,0,0,1,0,0,0,1],
-            [1,0,2,0,0,0,2,0,2,0,0,0,2,0,1],
-            [1,0,0,0,1,0,0,0,0,0,1,0,0,0,1],
-            [1,1,1,0,1,1,1,0,1,1,1,0,1,1,1],
-            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-            [1,0,2,0,1,0,2,2,2,0,1,0,2,0,1],
-            [1,0,0,0,1,0,0,0,0,0,1,0,0,0,1],
-            [1,1,1,1,1,1,1,0,1,1,1,1,1,1,1],
-            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
-        ],
-        spawn: { x: 7, z: 13 },
-        exit: { x: 7, z: 1 },
-        enemies: [
-            { x: -18, z: -10, hp: 80, name: "QUADRATIC SENTINEL" },
-            { x: 18, z: -10, hp: 80, name: "COORDINATE SENTINEL" },
-            { x: 0, z: 6, hp: 100, name: "TRIG SENTRY" }
-        ],
-        vaults: [
-            {
-                id: 0,
-                name: "Ground Roots",
-                gridX: 3,
-                gridZ: 1,
-                type: "quadratics",
-                problem: "Class 10 Quadratic Equations: Find the positive root of the equation x² - 5x - 6 = 0.",
-                options: [-1, 6],
-                ans: 6,
-                formula: "(x - 6)(x + 1) = 0 => Positive root is 6."
-            },
-            {
-                id: 1,
-                name: "Storage Core",
-                gridX: 11,
-                gridZ: 1,
-                type: "geometry",
-                problem: "Class 10 Coordinate Geometry: Find the distance between the coordinates (2, 3) and (6, 6).",
-                geomType: "cube",
-                options: [4, 5, 7],
-                ans: 5,
-                formula: "d = sqrt((6-2)² + (6-3)²) = sqrt(16 + 9) = 5."
-            },
-            {
-                id: 2,
-                name: "Wall Support",
-                gridX: 7,
-                gridZ: 9,
-                type: "trig",
-                problem: "Class 10 Trigonometry: If sin(A) = 3/5, find the value of (tan(A) * 12).",
-                options: [9, 12, 15],
-                ans: 9,
-                formula: "sin(A)=3/5 => cos(A)=4/5 => tan(A)=3/4. tan(A)*12 = 9."
-            }
-        ]
-    },
-    {
-        name: "Level 3: Emerald Greenhouse",
+        name: "Level 2: Emerald Greenhouse",
         theme: "emerald_greenhouse",
         floorColor: 0xecfdf5, // Pale green
         wallColor: 0xa7f3d0,  // Mint green
@@ -225,7 +154,7 @@ export const LEVELS = [
         ]
     },
     {
-        name: "Level 4: Magma Reactor Core",
+        name: "Level 3: Magma Reactor Core",
         theme: "magma_core",
         floorColor: 0xfff7ed, // Pale orange
         wallColor: 0xffedd5,  // Light orange
@@ -301,7 +230,7 @@ export const LEVELS = [
         ]
     },
     {
-        name: "Level 5: Crossroads Terminal",
+        name: "Level 4: Crossroads Terminal",
         theme: "crossroads",
         floorColor: 0xfef2f2, // Soft red
         wallColor: 0xfecaca,  // Lighter red
@@ -379,7 +308,7 @@ export const LEVELS = [
         ]
     },
     {
-        name: "Level 6: Obsidian Abyss",
+        name: "Level 5: Obsidian Abyss",
         theme: "obsidian_abyss",
         floorColor: 0xf5f3ff, // Light purple
         wallColor: 0xddd6fe,  // Pale purple
@@ -454,7 +383,7 @@ export const LEVELS = [
         ]
     },
     {
-        name: "Level 7: Hydro Station Vault",
+        name: "Level 6: Hydro Station Vault",
         theme: "hydro_station",
         floorColor: 0xf0fdf4, // Very pale green-blue
         wallColor: 0xdcfce7,  // Light mint
@@ -531,7 +460,7 @@ export const LEVELS = [
         ]
     },
     {
-        name: "Level 8: Radiant Sanctum",
+        name: "Level 7: Radiant Sanctum",
         theme: "radiant_sanctum",
         floorColor: 0xfff1f2, // Pale rose
         wallColor: 0xffe4e6,  // Light rose
@@ -606,7 +535,7 @@ export const LEVELS = [
         ]
     },
     {
-        name: "Level 9: Neon Necropolis",
+        name: "Level 8: Neon Necropolis",
         theme: "neon_necropolis",
         floorColor: 0xf0fdfa, // Pale teal
         wallColor: 0xccfbf1,  // Light teal
@@ -684,7 +613,7 @@ export const LEVELS = [
         ]
     },
     {
-        name: "Level 10: The Vault Central Core",
+        name: "Level 9: The Vault Central Core",
         theme: "vault_core",
         floorColor: 0xfbfbfe, // Pure white
         wallColor: 0xf1f1f6,  // White slate

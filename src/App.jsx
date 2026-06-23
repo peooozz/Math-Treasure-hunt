@@ -230,9 +230,9 @@ function App() {
             onNextLevel: () => {
                 setLevel((prev) => {
                     const next = prev + 1;
-                    if (next > 10) {
+                    if (next > 9) {
                         setVictory(true);
-                        return 10;
+                        return 9;
                     } else {
                         setUnlockedLevels((prevUnlocked) => {
                             const newUnlocked = Math.max(prevUnlocked, next);
@@ -1028,7 +1028,7 @@ function App() {
                             </div>
                             <div className="stat-row">
                                 <span className="stat-label font-orbitron">LEVEL</span>
-                                <span className="stat-value text-gold font-orbitron">{level} / 10</span>
+                                <span className="stat-value text-gold font-orbitron">{level} / 9</span>
                             </div>
                             <div className="stat-row">
                                 <span className="stat-label font-orbitron">DECRYPTED</span>

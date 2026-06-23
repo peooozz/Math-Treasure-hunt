@@ -75,7 +75,7 @@ const Vaults = (() => {
             const size = new THREE.Vector3();
             bbox.getSize(size);
             const maxDim = size.x || 1.0;
-            const scaleFactor = 3.0 / maxDim;
+            const scaleFactor = 2.0 / maxDim;
             gltfScene.scale.set(scaleFactor, scaleFactor, scaleFactor);
             
             // Align bottom center of GLB mesh slightly above ground (which is -0.65 relative to mesh Y offset)
@@ -200,24 +200,24 @@ const Vaults = (() => {
         group.position.set(x, y + 0.8, z);
         
         // Base Box
-        const baseGeo = new THREE.BoxGeometry(3.0, 2.2, 2.2);
+        const baseGeo = new THREE.BoxGeometry(2.0, 1.5, 1.5);
         const baseMat = new THREE.MeshStandardMaterial({
             color: 0x242833,
             roughness: 0.35,
             metalness: 0.85
         });
         const placeholderBase = new THREE.Mesh(baseGeo, baseMat);
-        placeholderBase.position.y = 0.5;
+        placeholderBase.position.y = 0.15;
         placeholderBase.castShadow = true;
 
         // Glowing trim
-        const trimGeo = new THREE.BoxGeometry(3.1, 0.15, 2.3);
+        const trimGeo = new THREE.BoxGeometry(2.1, 0.1, 1.6);
         const trimMat = new THREE.MeshBasicMaterial({
             color: color,
             toneMapped: false
         });
         const trim = new THREE.Mesh(trimGeo, trimMat);
-        trim.position.y = 1.6;
+        trim.position.y = 0.95;
 
         // Always add placeholders initially so we don't have a blank frame
         group.add(placeholderBase);
@@ -1380,6 +1380,11 @@ const Vaults = (() => {
     }
 
     function clearAll() {
+        activeVaults.forEach(v => {
+            if (sceneRef && v.mesh) {
+                sceneRef.remove(v.mesh);
+            }
+        });
         activeVaults.length = 0;
     }
 
