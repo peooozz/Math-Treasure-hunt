@@ -167,9 +167,10 @@ const Vaults = (() => {
         const halfW = (gridCols * 4) / 2;
         const halfD = (gridRows * 4) / 2;
         
+        const posScale = lvl.openWorld ? 2.0 : 1.0;
         levelVaults.forEach(v => {
-            const worldX = -halfW + v.gridX * 4 + 2;
-            const worldZ = -halfD + v.gridZ * 4 + 2;
+            const worldX = (-halfW + v.gridX * 4 + 2) * posScale;
+            const worldZ = (-halfD + v.gridZ * 4 + 2) * posScale;
             const color = getColorForType(v.type);
             createVaultMesh(worldX, 0, worldZ, color, v.type.toUpperCase(), v.id);
         });

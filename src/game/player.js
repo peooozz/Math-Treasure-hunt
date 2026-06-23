@@ -619,7 +619,7 @@ const Player = (() => {
                 const py = b.mesh.position.y;
                 const pz = Math.abs(b.mesh.position.z);
                 
-                if (px > 50 || py < -1 || py > 21 || pz > 50) {
+                if (px > 100 || py < -1 || py > 21 || pz > 100) {
                     hit = true;
                     Particles.spawnSparks(b.mesh.position, 0x0055ff, 8); // blue sparks on wall hit
                 }

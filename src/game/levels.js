@@ -33,9 +33,9 @@ export const LEVELS = [
         spawn: { x: 6, z: 12 },
         exit: { x: 1, z: 1 },
         enemies: [
-            { x: -8, z: -8, hp: 60, name: "REAL NUMBERS GUARD" },
-            { x: 6, z: -8, hp: 80, name: "AP GUARD" },
-            { x: -12, z: 12, hp: 75, name: "LINEAR EQUATIONS GUARD" }
+            { x: -16, z: -16, hp: 60, name: "REAL NUMBERS GUARD" },
+            { x: 12, z: -16, hp: 80, name: "AP GUARD" },
+            { x: -24, z: 24, hp: 75, name: "LINEAR EQUATIONS GUARD" }
         ],
         vaults: [
             {
