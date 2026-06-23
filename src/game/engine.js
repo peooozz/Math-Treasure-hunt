@@ -411,7 +411,7 @@ const GameEngine = (() => {
         mazePhysicsBodies.push(floorBody);
 
         // Floor coordinate grid lines
-        if (lvl.theme !== "arabic_city") {
+        if (!lvl.openWorld) {
             const floorGrid = new THREE.GridHelper(w, gridCols, lvl.lightColorLeft || 0xff007a, 0xe2e8f0);
             floorGrid.position.y = 0.02;
             scene.add(floorGrid);
@@ -419,7 +419,7 @@ const GameEngine = (() => {
         }
 
         // Build procedural structure as initial layout (to support instant loading/hybrid fallback)
-        const showFallbackRoom = lvl.theme !== "arabic_city";
+        const showFallbackRoom = !lvl.openWorld;
         const boundW = (lvl.theme === "arabic_city" || lvl.openWorld) ? 40.0 : halfW;
         const boundD = (lvl.theme === "arabic_city" || lvl.openWorld) ? 40.0 : halfD;
 
@@ -657,7 +657,10 @@ const GameEngine = (() => {
                 model.scale.set(scaleFactor, scaleFactor, scaleFactor);
 
                 // Center position (X=0, Z=0, bottom Y=0)
-                const posY = (lvl.theme === "arabic_city" || lvl.openWorld) ? 0 : -box.min.y * scaleFactor;
+                let posY = (lvl.theme === "arabic_city" || lvl.openWorld) ? 0 : -box.min.y * scaleFactor;
+                if (lvl.theme === "mdc_complex") {
+                    posY = -box.min.y * scaleFactor;
+                }
                 model.position.set(
                     -center.x * scaleFactor,
                     posY,
@@ -705,7 +708,7 @@ const GameEngine = (() => {
                             }
                         }
 
-                        if (lvl.theme === "arabic_city") {
+                        if (lvl.theme === "arabic_city" || lvl.theme === "cyberpunk_city" || lvl.theme === "mdc_complex") {
                             // Split combined building meshes using DSU to get separate components
                             child.updateMatrixWorld(true);
                             const localBoxes = getComponentBoundingBoxes(child.geometry);
@@ -851,6 +854,12 @@ const GameEngine = (() => {
                         }
                     }
                 });
+
+                // Reset player position once the model is loaded to align with custom environment height
+                const spawnX = -halfW + lvl.spawn.x * 4 + 2;
+                const spawnZ = -halfD + lvl.spawn.z * 4 + 2;
+                const spawnY = (lvl.theme === "mdc_complex") ? 10.0 : 3.0;
+                Player.reset(new THREE.Vector3(spawnX, spawnY, spawnZ));
             };
 
             if (modelCache.has(lvl.modelPath)) {

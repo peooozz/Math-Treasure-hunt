@@ -24,97 +24,20 @@ const LEVEL_CARDS_DATA = [
         diff: "Easy", 
         color: "#00f0ff", 
         icon: "🏙️", 
-        difficultyProgress: 25,
+        difficultyProgress: 50,
         formulaText: "x = -b±√D / 2a & d = √Δx²+Δy²",
         formulaDesc: "Solve quadratic equations using standard formula roots. Calculate distance between Cartesian coordinates."
     },
     { 
         id: 3, 
-        name: "Level 3: Emerald Greenhouse", 
-        concept: "Triangles & Circular Areas", 
-        diff: "Easy", 
-        color: "#10b981", 
-        icon: "🌿", 
-        difficultyProgress: 40,
-        formulaText: "AD/DB = AE/EC & A = θ/360*πr²",
-        formulaDesc: "Apply Basic Proportionality (Thales) Theorem in similar triangles. Calculate area of sectors from circle angles."
-    },
-    { 
-        id: 4, 
-        name: "Level 4: Magma Reactor", 
+        name: "Level 3: MDC Complex", 
         concept: "Spherical Volumes & Probability", 
         diff: "Medium", 
-        color: "#ff4500", 
-        icon: "🌋", 
-        difficultyProgress: 55,
-        formulaText: "V = 4/3*πr³ & P(E) = n(E)/n(S)",
-        formulaDesc: "Determine volume of spherical reactor shields. Compute the probability of drawing red/black objects."
-    },
-    { 
-        id: 5, 
-        name: "Level 5: Crossroads Terminal", 
-        concept: "Linear Systems & Trig Heights", 
-        diff: "Medium", 
-        color: "#ec4899", 
-        icon: "🔀", 
-        difficultyProgress: 65,
-        formulaText: "a₁x+b₁y=c₁ & tan(θ)=opp/adj",
-        formulaDesc: "Solve systems of linear equations via substitution or elimination. Calculate shadows using trigonometry height angles."
-    },
-    { 
-        id: 6, 
-        name: "Level 6: Obsidian Abyss", 
-        concept: "Vector Midpoints & Discriminants", 
-        diff: "Hard", 
-        color: "#bd00ff", 
-        icon: "🔮", 
-        difficultyProgress: 75,
-        formulaText: "((x₁+x₂)/2, (y₁+y₂)/2) & D=b²-4ac",
-        formulaDesc: "Locate Midpoint coordinates of segment vectors. Check discriminant to find root characteristics."
-    },
-    { 
-        id: 7, 
-        name: "Level 7: Hydro Station", 
-        concept: "Cylinder Areas & Similar Tangents", 
-        diff: "Hard", 
-        color: "#06b6d4", 
-        icon: "💧", 
-        difficultyProgress: 85,
-        formulaText: "TSA = 2πr(r+h) & Tangent ⊥ Radius",
-        formulaDesc: "Find total surface area of solid cylinders. Calculate tangent lengths using Pythagorean theorem on circles."
-    },
-    { 
-        id: 8, 
-        name: "Level 8: Radiant Sanctum", 
-        concept: "Trig Evaluations & Prime Exponents", 
-        diff: "Extreme", 
-        color: "#f43f5e", 
-        icon: "🏛️", 
-        difficultyProgress: 90,
-        formulaText: "tan(45°)=1, sin(30°)=1/2",
-        formulaDesc: "Evaluate trigonometric ratios for standard angles. Find exponents of factors in prime factorizations."
-    },
-    { 
-        id: 9, 
-        name: "Level 9: Neon Necropolis", 
-        concept: "AP Progressions & Root Products", 
-        diff: "Extreme", 
-        color: "#14b8a6", 
-        icon: "☣️", 
-        difficultyProgress: 95,
-        formulaText: "S_n = n/2*[2a+(n-1)d] & αβ = c/a",
-        formulaDesc: "Calculate sum of Arithmetic Progression terms. Find the product of polynomial roots using standard coefficients."
-    },
-    { 
-        id: 10, 
-        name: "Level 10: Central Core", 
-        concept: "Boss Challenge: Mixed Maths", 
-        diff: "Boss Core", 
-        color: "#ff007a", 
-        icon: "👑", 
+        color: "#10b981", 
+        icon: "🏢", 
         difficultyProgress: 100,
-        formulaText: "d=√x²+y² & D=b²-4ac=0",
-        formulaDesc: "The ultimate challenge! Combine coordinate distance from origin, equal root discriminant logic, and angles of depression."
+        formulaText: "V = 4/3*πr³ & P(E) = n(E)/n(S)",
+        formulaDesc: "Determine volume of spherical reactor shields. Compute the probability of drawing red/black objects, and sum of zeroes."
     }
 ];
 
@@ -129,7 +52,7 @@ function App() {
     const [victory, setVictory] = useState(false);
     const [unlockedLevels, setUnlockedLevels] = useState(() => {
         const saved = localStorage.getItem('math_vault_unlocked_level');
-        return saved ? Math.max(parseInt(saved, 10), 10) : 10;
+        return saved ? Math.min(parseInt(saved, 10), 3) : 3;
     });
     const [devBypass, setDevBypass] = useState(false);
     const [activeLevelIndex, setActiveLevelIndex] = useState(0);
@@ -230,9 +153,9 @@ function App() {
             onNextLevel: () => {
                 setLevel((prev) => {
                     const next = prev + 1;
-                    if (next > 9) {
+                    if (next > 3) {
                         setVictory(true);
-                        return 9;
+                        return 3;
                     } else {
                         setUnlockedLevels((prevUnlocked) => {
                             const newUnlocked = Math.max(prevUnlocked, next);

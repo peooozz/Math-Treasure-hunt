@@ -11,6 +11,10 @@ import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js';
 
 const Vaults = (() => {
     let sceneRef;
+    let currentLevelIdx = 1;
+    let cachedEnvironmentModel = null;
+    const raycaster = new THREE.Raycaster();
+    const downVector = new THREE.Vector3(0, -1, 0);
     const activeVaults = [];
     
     // Sub-scene properties for the puzzle overlay
@@ -154,9 +158,38 @@ const Vaults = (() => {
         }
     }
 
+    function getGroundHeight(x, z) {
+        if (!sceneRef) return 0;
+        if (!cachedEnvironmentModel) {
+            cachedEnvironmentModel = sceneRef.getObjectByName("environment_model");
+        }
+        if (!cachedEnvironmentModel) return 0;
+        
+        const origin = new THREE.Vector3(x, 200, z);
+        raycaster.set(origin, downVector);
+        raycaster.far = 250;
+        
+        const intersects = raycaster.intersectObject(cachedEnvironmentModel, true);
+        if (intersects.length > 0) {
+            let closestY = intersects[0].point.y;
+            let minDist = Math.abs(closestY);
+            for (let i = 1; i < intersects.length; i++) {
+                const yVal = intersects[i].point.y;
+                const dist = Math.abs(yVal);
+                if (dist < minDist) {
+                    minDist = dist;
+                    closestY = yVal;
+                }
+            }
+            return closestY;
+        }
+        return 0;
+    }
+
     function init(scene, levelVaults = [], levelIndex = 1) {
         sceneRef = scene;
         currentLevelVaults = levelVaults;
+        currentLevelIdx = levelIndex;
         activeVaults.length = 0;
         
         loadChestModel();
@@ -1367,10 +1400,15 @@ const Vaults = (() => {
             }
 
             if (!v.unlocked) {
+                let groundY = 0;
+                const lvl = LEVELS[currentLevelIdx - 1] || LEVELS[0];
+                if (lvl && lvl.modelPath) {
+                    groundY = getGroundHeight(v.position.x, v.position.z);
+                }
                 if (v.id === 3) {
-                    v.mesh.position.y = 18.5 + Math.sin(time) * 0.15;
+                    v.mesh.position.y = groundY + 18.5 + Math.sin(time) * 0.15;
                 } else {
-                    v.mesh.position.y = 0.8 + Math.sin(time) * 0.1;
+                    v.mesh.position.y = groundY + 0.8 + Math.sin(time) * 0.1;
                 }
                 if (!v.opened) {
                     v.mesh.rotation.y += 0.01;
@@ -1386,6 +1424,7 @@ const Vaults = (() => {
             }
         });
         activeVaults.length = 0;
+        cachedEnvironmentModel = null;
     }
 
     return {
