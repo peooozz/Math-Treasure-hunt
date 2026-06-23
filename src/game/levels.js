@@ -83,73 +83,74 @@ export const LEVELS = [
         ]
     },
     {
-        name: "Level 2: Emerald Greenhouse",
-        theme: "emerald_greenhouse",
-        floorColor: 0xecfdf5, // Pale green
-        wallColor: 0xa7f3d0,  // Mint green
-        lightColorLeft: 0x10b981, // Emerald green
-        lightColorRight: 0x84cc16, // Lime green
-        fogColor: 0xecfdf5,
-        fogDensity: 0.018,
+        name: "Level 2: Cyberpunk City",
+        theme: "cyberpunk_city",
+        openWorld: true,
+        modelPath: "/cyberpunk_city.glb",
+        floorColor: 0x09090b, // Deep black
+        wallColor: 0x1e293b,  // Dark slate
+        lightColorLeft: 0xff007a, // Neon hot pink
+        lightColorRight: 0x00f0ff, // Cyber cyan
+        fogColor: 0x09090b,
+        fogDensity: 0.015,
         grid: [
-            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-            [1,0,0,0,0,0,1,0,1,0,0,0,0,0,1],
-            [1,0,1,1,1,0,1,0,1,0,1,1,1,0,1],
-            [1,0,1,0,1,0,0,0,0,0,1,0,1,0,1],
-            [1,0,1,0,1,1,1,0,1,1,1,0,1,0,1],
-            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-            [1,1,1,0,1,1,2,0,2,1,1,0,1,1,1],
-            [1,0,1,0,1,0,0,0,0,0,1,0,1,0,1],
-            [1,0,1,0,1,1,1,1,1,1,1,0,1,0,1],
-            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-            [1,1,1,1,1,0,1,1,1,0,1,1,1,1,1],
-            [1,0,0,0,1,0,1,0,1,0,1,0,0,0,1],
-            [1,0,2,0,1,0,0,0,0,0,1,0,2,0,1],
-            [1,0,0,0,0,0,1,0,1,0,0,0,0,0,1],
-            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
         ],
-        spawn: { x: 1, z: 1 },
-        exit: { x: 13, z: 13 },
+        spawn: { x: 7, z: 13 },
+        exit: { x: 7, z: 1 },
         enemies: [
-            { x: -10, z: -10, hp: 85, name: "THALES SENTRY" },
-            { x: 10, z: -10, hp: 85, name: "TANGENT GUARD" },
-            { x: 0, z: 8, hp: 90, name: "SECTOR SENTRY" }
+            { x: -18, z: -10, hp: 80, name: "QUADRATIC SENTINEL" },
+            { x: 18, z: -10, hp: 80, name: "COORDINATE SENTINEL" },
+            { x: 0, z: 6, hp: 100, name: "TRIG SENTRY" }
         ],
         vaults: [
             {
                 id: 0,
-                name: "Grid Triangulation",
-                gridX: 7,
-                gridZ: 3,
-                type: "trig",
-                problem: "Class 10 Triangles: In ABC, DE || BC. If AD = 2, DB = 3, AE = 4, find EC.",
-                options: [4, 6, 8],
+                name: "Ground Roots",
+                gridX: 3,
+                gridZ: 1,
+                type: "quadratics",
+                problem: "Class 10 Quadratic Equations: Find the positive root of the equation x² - 5x - 6 = 0.",
+                options: [-1, 6],
                 ans: 6,
-                formula: "By Basic Proportionality Theorem, AD/DB = AE/EC => 2/3 = 4/EC => EC = 6."
+                formula: "(x - 6)(x + 1) = 0 => Positive root is 6."
             },
             {
                 id: 1,
-                name: "Reactor Shell",
-                gridX: 3,
-                gridZ: 12,
+                name: "Storage Core",
+                gridX: 11,
+                gridZ: 1,
                 type: "geometry",
-                problem: "Class 10 Circles: Tangent length PQ from Q to circle is 24cm, and distance of Q from center is 25cm. Find radius r.",
-                geomType: "sphere",
-                options: [7, 10, 15],
-                ans: 7,
-                formula: "r = sqrt(25² - 24²) = sqrt(625 - 576) = 7cm."
+                problem: "Class 10 Coordinate Geometry: Find the distance between the coordinates (2, 3) and (6, 6).",
+                geomType: "cube",
+                options: [4, 5, 7],
+                ans: 5,
+                formula: "d = sqrt((6-2)² + (6-3)²) = sqrt(16 + 9) = 5."
             },
             {
                 id: 2,
-                name: "Fuel Cone",
-                gridX: 11,
-                gridZ: 12,
-                type: "geometry",
-                problem: "Class 10 Areas Related to Circles: Find the area of sector of circle with radius 6cm and angle 60° (use pi = 3.14, round to nearest integer).",
-                geomType: "cone",
-                options: [12, 19, 38],
-                ans: 19,
-                formula: "Area = (60/360) * pi * 6² = 6 * 3.14 = 18.84 ≈ 19."
+                name: "Wall Support",
+                gridX: 7,
+                gridZ: 9,
+                type: "trig",
+                problem: "Class 10 Trigonometry: If sin(A) = 3/5, find the value of (tan(A) * 12).",
+                options: [9, 12, 15],
+                ans: 9,
+                formula: "sin(A)=3/5 => cos(A)=4/5 => tan(A)=3/4. tan(A)*12 = 9."
             }
         ]
     },
