@@ -218,7 +218,7 @@ const Enemies = (() => {
         
         if (lvl.theme === "arabic_city" || lvl.openWorld) {
             // Strict boundaries for open world levels (Level 1: Arabic City)
-            const limit = 80.0;
+            const limit = 40.0;
             if (x < -limit || x > limit || z < -limit || z > limit) {
                 return true;
             }
@@ -815,7 +815,7 @@ const Enemies = (() => {
 
                     // Hard clamp for chasing in open worlds
                     if (lvl.theme === "arabic_city" || lvl.openWorld) {
-                        const limit = 79.5;
+                        const limit = 39.5;
                         enemy.mesh.position.x = Math.max(-limit, Math.min(limit, enemy.mesh.position.x));
                         enemy.mesh.position.z = Math.max(-limit, Math.min(limit, enemy.mesh.position.z));
                     }
@@ -857,7 +857,7 @@ const Enemies = (() => {
 
                 // Hard clamp for open worlds to prevent ever escaping map
                 if (lvl.theme === "arabic_city" || lvl.openWorld) {
-                    const limit = 79.5;
+                    const limit = 39.5;
                     enemy.mesh.position.x = Math.max(-limit, Math.min(limit, enemy.mesh.position.x));
                     enemy.mesh.position.z = Math.max(-limit, Math.min(limit, enemy.mesh.position.z));
                 }

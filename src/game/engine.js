@@ -242,9 +242,8 @@ const GameEngine = (() => {
         Physics.init();
         Particles.init(scene);
         
-        const spawnScale = lvl.openWorld ? 2.0 : 1.0;
-        const spawnX = (-halfW + lvl.spawn.x * 4 + 2) * spawnScale;
-        const spawnZ = (-halfD + lvl.spawn.z * 4 + 2) * spawnScale;
+        const spawnX = -halfW + lvl.spawn.x * 4 + 2;
+        const spawnZ = -halfD + lvl.spawn.z * 4 + 2;
         
         Player.init(camera, new THREE.Vector3(spawnX, 3, spawnZ), uiCallbacks, currentLevelIndex);
         Enemies.init(scene, currentLevelIndex);
@@ -300,8 +299,8 @@ const GameEngine = (() => {
         let lightBoundW = halfW;
         let lightBoundD = halfD;
         if (lvl.theme === "arabic_city" || lvl.openWorld) {
-            lightBoundW = 80;
-            lightBoundD = 80;
+            lightBoundW = 40;
+            lightBoundD = 40;
         }
         directionalLight.shadow.camera.left = -lightBoundW - 5;
         directionalLight.shadow.camera.right = lightBoundW + 5;
@@ -421,8 +420,8 @@ const GameEngine = (() => {
 
         // Build procedural structure as initial layout (to support instant loading/hybrid fallback)
         const showFallbackRoom = lvl.theme !== "arabic_city";
-        const boundW = (lvl.theme === "arabic_city" || lvl.openWorld) ? 80.0 : halfW;
-        const boundD = (lvl.theme === "arabic_city" || lvl.openWorld) ? 80.0 : halfD;
+        const boundW = (lvl.theme === "arabic_city" || lvl.openWorld) ? 40.0 : halfW;
+        const boundD = (lvl.theme === "arabic_city" || lvl.openWorld) ? 40.0 : halfD;
 
         if (showFallbackRoom) {
             // 2. CEILING (y = 20)
@@ -1166,11 +1165,10 @@ const GameEngine = (() => {
                 const gridCols = lvl.grid[0].length;
                 const halfW = (gridCols * 4) / 2;
                 const halfD = (gridRows * 4) / 2;
-                const posScale = lvl.openWorld ? 2.0 : 1.0;
                 const portalPos = new THREE.Vector3(
-                    (-halfW + portalCell.x * 4 + 2) * posScale,
+                    -halfW + portalCell.x * 4 + 2,
                     playerPos.y,
-                    (-halfD + portalCell.z * 4 + 2) * posScale
+                    -halfD + portalCell.z * 4 + 2
                 );
                 
                 const localTarget = portalPos.clone();
@@ -1193,11 +1191,10 @@ const GameEngine = (() => {
             const halfW = (gridCols * 4) / 2;
             const halfD = (gridRows * 4) / 2;
             
-            const posScale = lvl.openWorld ? 2.0 : 1.0;
             const portalPos = new THREE.Vector3(
-                (-halfW + portalCell.x * 4 + 2) * posScale,
+                -halfW + portalCell.x * 4 + 2,
                 playerPos.y,
-                (-halfD + portalCell.z * 4 + 2) * posScale
+                -halfD + portalCell.z * 4 + 2
             );
             if (playerPos.distanceTo(portalPos) < 2.0) {
                 portalActive = false;
@@ -1244,9 +1241,8 @@ const GameEngine = (() => {
         const halfW = (gridCols * 4) / 2;
         const halfD = (gridRows * 4) / 2;
         
-        const posScale = lvl.openWorld ? 2.0 : 1.0;
-        const portalX = (-halfW + portalCell.x * 4 + 2) * posScale;
-        const portalZ = (-halfD + portalCell.z * 4 + 2) * posScale;
+        const portalX = -halfW + portalCell.x * 4 + 2;
+        const portalZ = -halfD + portalCell.z * 4 + 2;
         
         // Create a glowing warp portal mesh
         const portalGeo = new THREE.CylinderGeometry(1.5, 1.5, 0.2, 32);
@@ -1334,9 +1330,8 @@ const GameEngine = (() => {
         Vaults.init(scene, lvl.vaults, currentLevelIndex);
         
         // Reset player to current level spawn coordinates
-        const spawnScale = lvl.openWorld ? 2.0 : 1.0;
-        const spawnX = (-halfW + lvl.spawn.x * 4 + 2) * spawnScale;
-        const spawnZ = (-halfD + lvl.spawn.z * 4 + 2) * spawnScale;
+        const spawnX = -halfW + lvl.spawn.x * 4 + 2;
+        const spawnZ = -halfD + lvl.spawn.z * 4 + 2;
         const spawnPos = new THREE.Vector3(spawnX, 3, spawnZ);
 
         Player.reset(spawnPos, currentLevelIndex);
@@ -1348,7 +1343,7 @@ const GameEngine = (() => {
         return {
             grid: lvl.grid,
             openWorld: !!lvl.openWorld,
-            boundSize: lvl.openWorld ? 80.0 : ((lvl.grid[0].length * 4) / 2),
+            boundSize: lvl.openWorld ? 40.0 : ((lvl.grid[0].length * 4) / 2),
             buildingFootprints: buildingFootprints,
             playerPos: Player.getPosition(),
             enemies: Enemies.getActiveEnemies ? Enemies.getActiveEnemies() : [],
