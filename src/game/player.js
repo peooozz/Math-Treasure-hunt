@@ -18,7 +18,7 @@ const Player = (() => {
     
     // Movement state
     const keys = { w: false, a: false, s: false, d: false };
-    const moveSpeed = 8.5;
+    const moveSpeed = 13.5;
     const jumpVelocity = 7.0;
     let canJump = false;
     let walkTime = 0;
@@ -123,6 +123,7 @@ const Player = (() => {
         
         // 2. Setup Pointer Lock Controls
         controls = new PointerLockControls(cameraRef, document.body);
+        controls.pointerSpeed = 1.8; // Increased sensitivity
         
         controls.addEventListener('lock', () => {
             callbacks.onNotification("STATION ACTIVE");

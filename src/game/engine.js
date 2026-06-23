@@ -399,6 +399,7 @@ const GameEngine = (() => {
         }
         const floor = new THREE.Mesh(new THREE.PlaneGeometry(floorW, floorD), floorMat);
         floor.rotation.x = -Math.PI / 2;
+        floor.position.y = (lvl.theme === "arabic_city" || lvl.openWorld) ? -2.0 : 0;
         floor.receiveShadow = true;
         scene.add(floor);
         mazeMeshes.push(floor);
@@ -657,9 +658,10 @@ const GameEngine = (() => {
                 model.scale.set(scaleFactor, scaleFactor, scaleFactor);
 
                 // Center position (X=0, Z=0, bottom Y=0)
+                const posY = (lvl.theme === "arabic_city" || lvl.openWorld) ? 0 : -box.min.y * scaleFactor;
                 model.position.set(
                     -center.x * scaleFactor,
-                    -box.min.y * scaleFactor,
+                    posY,
                     -center.z * scaleFactor
                 );
 

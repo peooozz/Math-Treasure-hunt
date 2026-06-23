@@ -108,7 +108,8 @@ const Physics = (() => {
 
     function step(deltaTime) {
         const timeStep = Math.min(deltaTime, 0.1);
-        world.step(1 / 60, timeStep, 3);
+        // Use variable timestep for perfectly smooth rendering and camera sync on all monitor refresh rates (e.g. 120Hz/144Hz/240Hz)
+        world.step(timeStep);
     }
 
     return {
