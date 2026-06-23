@@ -155,15 +155,15 @@ export const LEVELS = [
         ]
     },
     {
-        name: "Level 3: MDC Complex",
-        theme: "mdc_complex",
+        name: "Level 3: Shuri Castle",
+        theme: "shuri_castle",
         openWorld: true,
-        modelPath: "/mdc_complex.glb",
-        floorColor: 0x1e293b, // Dark slate
-        wallColor: 0x334155,  // Slate
-        lightColorLeft: 0x06b6d4, // Cyan
-        lightColorRight: 0x3b82f6, // Blue
-        fogColor: 0x0f172a, // Slate dark fog
+        modelPath: "/shuri_castle.glb",
+        floorColor: 0x3f3f46, // stone courtyard
+        wallColor: 0x991b1b,  // Shuri crimson red
+        lightColorLeft: 0xd97706, // sunset amber
+        lightColorRight: 0xd97706,
+        fogColor: 0xfee2e2, // warm cherry/red sunset fog
         fogDensity: 0.015,
         grid: [
             [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
@@ -183,11 +183,11 @@ export const LEVELS = [
             [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
         ],
         spawn: { x: 7, z: 13 },
-        exit: { x: 7, z: 1 },
+        exit: { x: 3, z: 2 },
         enemies: [
-            { x: -16, z: -12, hp: 90, name: "VOLUME COMPLEX GUARD" },
-            { x: 16, z: -12, hp: 90, name: "PROBABILITY COMPLEX GUARD" },
-            { x: 0, z: 12, hp: 100, name: "POLYNOMIAL EXTERMINATOR" }
+            { x: -16, z: -12, hp: 90, name: "VOLUME CASTLE GUARD" },
+            { x: 16, z: 20, hp: 90, name: "PROBABILITY CASTLE GUARD" },
+            { x: -16, z: 12, hp: 100, name: "POLYNOMIAL CASTLE GUARD" }
         ],
         vaults: [
             {
@@ -206,7 +206,7 @@ export const LEVELS = [
                 id: 1,
                 name: "Logic Circuit OR",
                 gridX: 11,
-                gridZ: 4,
+                gridZ: 12,
                 type: "algebra",
                 problem: "Class 10 Probability: A box has 3 red and 5 black balls. If a ball is drawn, find the probability (as % to nearest integer) of getting a red ball.",
                 label: "Probability (%)",
@@ -220,7 +220,7 @@ export const LEVELS = [
                 id: 2,
                 name: "Rooftop Projectile",
                 gridX: 7,
-                gridZ: 8,
+                gridZ: 11,
                 type: "algebra",
                 problem: "Class 10 Polynomials: Find the sum of zeroes of the quadratic polynomial p(x) = 3x² - 15x + 12.",
                 label: "Sum of Zeroes",

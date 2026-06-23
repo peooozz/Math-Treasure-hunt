@@ -658,8 +658,8 @@ const GameEngine = (() => {
 
                 // Center position (X=0, Z=0, bottom Y=0)
                 let posY = (lvl.theme === "arabic_city" || lvl.openWorld) ? 0 : -box.min.y * scaleFactor;
-                if (lvl.theme === "mdc_complex") {
-                    posY = -box.min.y * scaleFactor;
+                if (lvl.theme === "shuri_castle") {
+                    posY = -7.5;
                 }
                 model.position.set(
                     -center.x * scaleFactor,
@@ -708,7 +708,7 @@ const GameEngine = (() => {
                             }
                         }
 
-                        if (lvl.theme === "arabic_city" || lvl.theme === "cyberpunk_city" || lvl.theme === "mdc_complex") {
+                        if (lvl.theme === "arabic_city" || lvl.theme === "cyberpunk_city" || lvl.theme === "shuri_castle") {
                             // Split combined building meshes using DSU to get separate components
                             child.updateMatrixWorld(true);
                             const localBoxes = getComponentBoundingBoxes(child.geometry);
@@ -743,7 +743,7 @@ const GameEngine = (() => {
                                 
                                 const minHeight = 0.5;
                                 const minSize = 2.5; // Filter out small items/decorations
-                                const maxLimit = 35; // Filter out ground/street plates
+                                const maxLimit = isOpenWorld ? 60 : 35; // Filter out ground/street plates (expanded to 60 for openWorld to preserve large structures)
                                 
                                 if (meshSize.y < minHeight || meshSize.x < minSize || meshSize.z < minSize || meshSize.x > maxLimit || meshSize.z > maxLimit) {
                                     return;
@@ -858,7 +858,7 @@ const GameEngine = (() => {
                 // Reset player position once the model is loaded to align with custom environment height
                 const spawnX = -halfW + lvl.spawn.x * 4 + 2;
                 const spawnZ = -halfD + lvl.spawn.z * 4 + 2;
-                const spawnY = (lvl.theme === "mdc_complex") ? 10.0 : 3.0;
+                const spawnY = 3.0;
                 Player.reset(new THREE.Vector3(spawnX, spawnY, spawnZ));
             };
 

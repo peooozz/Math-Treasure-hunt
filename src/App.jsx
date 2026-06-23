@@ -30,11 +30,11 @@ const LEVEL_CARDS_DATA = [
     },
     { 
         id: 3, 
-        name: "Level 3: MDC Complex", 
+        name: "Level 3: Shuri Castle", 
         concept: "Spherical Volumes & Probability", 
         diff: "Medium", 
-        color: "#10b981", 
-        icon: "🏢", 
+        color: "#dc2626", 
+        icon: "🏯", 
         difficultyProgress: 100,
         formulaText: "V = 4/3*πr³ & P(E) = n(E)/n(S)",
         formulaDesc: "Determine volume of spherical reactor shields. Compute the probability of drawing red/black objects, and sum of zeroes."
