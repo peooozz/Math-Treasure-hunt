@@ -658,9 +658,6 @@ const GameEngine = (() => {
 
                 // Center position (X=0, Z=0, bottom Y=0)
                 let posY = (lvl.theme === "arabic_city" || lvl.openWorld) ? 0 : -box.min.y * scaleFactor;
-                if (lvl.theme === "shuri_castle") {
-                    posY = 3.0;
-                }
                 model.position.set(
                     -center.x * scaleFactor,
                     posY,
@@ -708,7 +705,7 @@ const GameEngine = (() => {
                             }
                         }
 
-                        if (lvl.theme === "arabic_city" || lvl.theme === "cyberpunk_city" || lvl.theme === "shuri_castle") {
+                        if (lvl.theme === "arabic_city" || lvl.theme === "cyberpunk_city" || lvl.theme === "neighbourhood_city") {
                             // Split combined building meshes using DSU to get separate components
                             child.updateMatrixWorld(true);
                             const localBoxes = getComponentBoundingBoxes(child.geometry);

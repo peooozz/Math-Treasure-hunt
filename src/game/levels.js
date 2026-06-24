@@ -155,15 +155,15 @@ export const LEVELS = [
         ]
     },
     {
-        name: "Level 3: Shuri Castle",
-        theme: "shuri_castle",
+        name: "Level 3: Neighborhood City",
+        theme: "neighbourhood_city",
         openWorld: true,
-        modelPath: "/shuri_castle.glb",
-        floorColor: 0x3f3f46, // stone courtyard
-        wallColor: 0x991b1b,  // Shuri crimson red
-        lightColorLeft: 0xd97706, // sunset amber
-        lightColorRight: 0xd97706,
-        fogColor: 0xfee2e2, // warm cherry/red sunset fog
+        modelPath: "/neighbourhood_city.glb",
+        floorColor: 0x27272a, // zinc-800 dark pavement
+        wallColor: 0x52525b,  // zinc-600 building facades
+        lightColorLeft: 0x3b82f6, // cyber blue
+        lightColorRight: 0xa855f7, // neon purple
+        fogColor: 0x09090b, // dark city fog
         fogDensity: 0.015,
         grid: [
             [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
@@ -182,19 +182,19 @@ export const LEVELS = [
             [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
             [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
         ],
-        spawn: { x: 7, z: 13 },
-        exit: { x: 3, z: 2 },
+        spawn: { x: 7, z: 7 },
+        exit: { x: 7, z: 2 },
         enemies: [
-            { x: -16, z: -12, hp: 90, name: "VOLUME CASTLE GUARD" },
-            { x: 16, z: 20, hp: 90, name: "PROBABILITY CASTLE GUARD" },
-            { x: -16, z: 12, hp: 100, name: "POLYNOMIAL CASTLE GUARD" }
+            { x: -16, z: -16, hp: 90, name: "VOLUME NEIGHBOR GUARD" },
+            { x: 16, z: -12, hp: 90, name: "PROBABILITY NEIGHBOR GUARD" },
+            { x: -8, z: 20, hp: 100, name: "POLYNOMIAL NEIGHBOR GUARD" }
         ],
         vaults: [
             {
                 id: 0,
                 name: "Reactor Shell",
                 gridX: 3,
-                gridZ: 4,
+                gridZ: 2,
                 type: "geometry",
                 problem: "Class 10 Surface Areas & Volumes: Calculate the volume of a spherical core shield of radius 3m (use pi = 3.14, nearest integer).",
                 geomType: "sphere",
@@ -206,7 +206,7 @@ export const LEVELS = [
                 id: 1,
                 name: "Logic Circuit OR",
                 gridX: 11,
-                gridZ: 12,
+                gridZ: 2,
                 type: "algebra",
                 problem: "Class 10 Probability: A box has 3 red and 5 black balls. If a ball is drawn, find the probability (as % to nearest integer) of getting a red ball.",
                 label: "Probability (%)",
@@ -220,7 +220,7 @@ export const LEVELS = [
                 id: 2,
                 name: "Rooftop Projectile",
                 gridX: 7,
-                gridZ: 11,
+                gridZ: 12,
                 type: "algebra",
                 problem: "Class 10 Polynomials: Find the sum of zeroes of the quadratic polynomial p(x) = 3x² - 15x + 12.",
                 label: "Sum of Zeroes",
