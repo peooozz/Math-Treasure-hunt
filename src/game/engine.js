@@ -659,7 +659,7 @@ const GameEngine = (() => {
                 // Center position (X=0, Z=0, bottom Y=0)
                 let posY = (lvl.theme === "arabic_city" || lvl.openWorld) ? 0 : -box.min.y * scaleFactor;
                 if (lvl.theme === "shuri_castle") {
-                    posY = -7.5;
+                    posY = 3.0;
                 }
                 model.position.set(
                     -center.x * scaleFactor,
