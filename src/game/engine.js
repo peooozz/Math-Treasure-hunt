@@ -23,8 +23,8 @@ function getComponentBoundingBoxes(geometry) {
     const numVertices = posAttr.count;
     const numFaces = indexAttr ? indexAttr.count / 3 : numVertices / 3;
     
-    const parent = new Int32Array(numFaces);
-    for (let i = 0; i < numFaces; i++) parent[i] = i;
+    const parent = new Int32Array(numVertices);
+    for (let i = 0; i < numVertices; i++) parent[i] = i;
     
     function find(i) {
         let root = i;
@@ -44,78 +44,40 @@ function getComponentBoundingBoxes(geometry) {
         if (rI !== rJ) parent[rI] = rJ;
     }
     
-    const keyToFaces = new Map();
     for (let f = 0; f < numFaces; f++) {
-        let v0 = indexAttr ? indexAttr.array[f * 3] : f * 3;
-        let v1 = indexAttr ? indexAttr.array[f * 3 + 1] : f * 3 + 1;
-        let v2 = indexAttr ? indexAttr.array[f * 3 + 2] : f * 3 + 2;
+        const v0 = indexAttr ? indexAttr.array[f * 3] : f * 3;
+        const v1 = indexAttr ? indexAttr.array[f * 3 + 1] : f * 3 + 1;
+        const v2 = indexAttr ? indexAttr.array[f * 3 + 2] : f * 3 + 2;
         
-        const vertices = [v0, v1, v2];
-        for (const v of vertices) {
-            const px = positions[v * 3];
-            const py = positions[v * 3 + 1];
-            const pz = positions[v * 3 + 2];
-            // Spatial merge rounding to 1 decimal place (10cm tolerance) to merge shared coordinates
-            const key = `${Math.round(px * 10)},${Math.round(py * 10)},${Math.round(pz * 10)}`;
-            let list = keyToFaces.get(key);
-            if (!list) {
-                list = [];
-                keyToFaces.set(key, list);
-            }
-            list.push(f);
-        }
+        union(v0, v1);
+        union(v0, v2);
     }
     
-    for (const [key, faces] of keyToFaces.entries()) {
-        if (faces.length > 1) {
-            const first = faces[0];
-            for (let i = 1; i < faces.length; i++) {
-                union(first, faces[i]);
-            }
-        }
-    }
-    
-    const componentFaces = new Map();
-    for (let f = 0; f < numFaces; f++) {
-        const r = find(f);
-        let list = componentFaces.get(r);
-        if (!list) {
-            list = [];
-            componentFaces.set(r, list);
-        }
-        list.push(f);
-    }
-    
-    const boxes = [];
-    for (const [root, faces] of componentFaces.entries()) {
-        let minX = Infinity, minY = Infinity, minZ = Infinity;
-        let maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity;
+    const rootToBox = new Map();
+    for (let v = 0; v < numVertices; v++) {
+        const px = positions[v * 3];
+        const py = positions[v * 3 + 1];
+        const pz = positions[v * 3 + 2];
         
-        for (const f of faces) {
-            let v0 = indexAttr ? indexAttr.array[f * 3] : f * 3;
-            let v1 = indexAttr ? indexAttr.array[f * 3 + 1] : f * 3 + 1;
-            let v2 = indexAttr ? indexAttr.array[f * 3 + 2] : f * 3 + 2;
-            
-            const vertices = [v0, v1, v2];
-            for (const v of vertices) {
-                const px = positions[v * 3];
-                const py = positions[v * 3 + 1];
-                const pz = positions[v * 3 + 2];
-                
-                if (px < minX) minX = px;
-                if (py < minY) minY = py;
-                if (pz < minZ) minZ = pz;
-                if (px > maxX) maxX = px;
-                if (py > maxY) maxY = py;
-                if (pz > maxZ) maxZ = pz;
-            }
+        const r = find(v);
+        let box = rootToBox.get(r);
+        if (!box) {
+            box = {
+                min: new THREE.Vector3(px, py, pz),
+                max: new THREE.Vector3(px, py, pz)
+            };
+            rootToBox.set(r, box);
+        } else {
+            if (px < box.min.x) box.min.x = px;
+            if (py < box.min.y) box.min.y = py;
+            if (pz < box.min.z) box.min.z = pz;
+            if (px > box.max.x) box.max.x = px;
+            if (py > box.max.y) box.max.y = py;
+            if (pz > box.max.z) box.max.z = pz;
         }
-        boxes.push({
-            min: new THREE.Vector3(minX, minY, minZ),
-            max: new THREE.Vector3(maxX, maxY, maxZ)
-        });
     }
-    return boxes;
+    
+    return Array.from(rootToBox.values());
 }
 
 const GameEngine = (() => {

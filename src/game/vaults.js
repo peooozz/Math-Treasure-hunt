@@ -298,6 +298,7 @@ const Vaults = (() => {
             light: light,
             sprite: sprite,
             position: new THREE.Vector3(x, y + 0.8, z),
+            groundY: y,
             radius: 2.2,
             unlocked: false,
             opened: false,
@@ -1421,11 +1422,7 @@ const Vaults = (() => {
             }
 
             if (!v.unlocked) {
-                let groundY = 0;
-                const lvl = LEVELS[currentLevelIdx - 1] || LEVELS[0];
-                if (lvl && lvl.modelPath) {
-                    groundY = getGroundHeight(v.position.x, v.position.z);
-                }
+                const groundY = v.groundY || 0;
                 if (v.id === 3) {
                     v.mesh.position.y = groundY + 18.5 + Math.sin(time) * 0.15;
                 } else {

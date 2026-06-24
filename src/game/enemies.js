@@ -599,7 +599,9 @@ const Enemies = (() => {
             sprite: sprite,
             lastShotTime: 0,
             shootInterval: 2500 + Math.random() * 800, // Slower cooldown! (2.5s - 3.3s)
-            isProcedural: isProcedural
+            isProcedural: isProcedural,
+            lastSamplePos: new THREE.Vector3(finalX, spawnY + 1.1, finalZ),
+            lastSamplePosGroundY: spawnY
         });
     }
 
@@ -875,11 +877,24 @@ const Enemies = (() => {
                 enemy.mesh.rotation.y = angle;
             }
 
-            // Ground-snap with gravity: raycast every frame for accurate grounding
+            // Ground-snap with gravity: raycast throttled for performance
             let targetY = enemy.startY;
             let modelLoaded = false;
             if (lvl && lvl.modelPath) {
-                const groundY = getGroundHeight(enemy.mesh.position.x, enemy.mesh.position.z);
+                let groundY = enemy.lastSamplePosGroundY !== undefined ? enemy.lastSamplePosGroundY : (enemy.startY - 1.1);
+                
+                if (enemy.lastSamplePos === undefined) {
+                    enemy.lastSamplePos = new THREE.Vector3().copy(enemy.mesh.position);
+                    groundY = getGroundHeight(enemy.mesh.position.x, enemy.mesh.position.z);
+                    enemy.lastSamplePosGroundY = groundY;
+                } else {
+                    const distMoved = enemy.mesh.position.distanceTo(enemy.lastSamplePos);
+                    if (distMoved > 0.25) {
+                        groundY = getGroundHeight(enemy.mesh.position.x, enemy.mesh.position.z);
+                        enemy.lastSamplePos.copy(enemy.mesh.position);
+                        enemy.lastSamplePosGroundY = groundY;
+                    }
+                }
                 targetY = groundY + 1.1;
                 if (cachedEnvironmentModel) {
                     modelLoaded = true;
