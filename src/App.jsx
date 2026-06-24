@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { createSignal, createEffect, onCleanup, For, Show } from 'solid-js';
 import GameEngine from './game/engine';
 import Vaults from './game/vaults';
 import Player from './game/player';
@@ -42,27 +42,29 @@ const LEVEL_CARDS_DATA = [
 ];
 
 function App() {
-    const canvasRef = useRef(null);
-    const puzzleCanvasRef = useRef(null);
-    const minimapRef = useRef(null);
+    let canvasRef;
+    let puzzleCanvasRef;
+    let minimapRef;
 
-    // Menu States
-    const [gameStarted, setGameStarted] = useState(false);
-    const [gameOver, setGameOver] = useState(false);
-    const [victory, setVictory] = useState(false);
-    const [unlockedLevels, setUnlockedLevels] = useState(() => {
-        const saved = localStorage.getItem('math_vault_unlocked_level');
-        return saved ? Math.min(parseInt(saved, 10), 3) : 3;
-    });
-    const [devBypass, setDevBypass] = useState(false);
-    const [activeLevelIndex, setActiveLevelIndex] = useState(0);
-    const [loadingProgress, setLoadingProgress] = useState(null);
+    // Menu Signals
+    const [gameStarted, setGameStarted] = createSignal(false);
+    const [gameOver, setGameOver] = createSignal(false);
+    const [victory, setVictory] = createSignal(false);
+    const [unlockedLevels, setUnlockedLevels] = createSignal(
+        (() => {
+            const saved = localStorage.getItem('math_vault_unlocked_level');
+            return saved ? Math.min(parseInt(saved, 10), 3) : 3;
+        })()
+    );
+    const [devBypass, setDevBypass] = createSignal(false);
+    const [activeLevelIndex, setActiveLevelIndex] = createSignal(0);
+    const [loadingProgress, setLoadingProgress] = createSignal(null);
     
     // Pause and Cursor state variables
-    const [isPaused, setIsPaused] = useState(false);
-    const [isHovered, setIsHovered] = useState(false);
-    const [isLocked, setIsLocked] = useState(false);
-    const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+    const [isPaused, setIsPaused] = createSignal(false);
+    const [isHovered, setIsHovered] = createSignal(false);
+    const [isLocked, setIsLocked] = createSignal(false);
+    const [mousePos, setMousePos] = createSignal({ x: 0, y: 0 });
 
     const handlePrevLevel = () => {
         setActiveLevelIndex((prev) => (prev > 0 ? prev - 1 : LEVEL_CARDS_DATA.length - 1));
@@ -72,38 +74,39 @@ function App() {
         setActiveLevelIndex((prev) => (prev < LEVEL_CARDS_DATA.length - 1 ? prev + 1 : 0));
     };
 
-    // Player HUD States
-    const [hp, setHp] = useState(100);
-    const [score, setScore] = useState(0);
-    const [orbs, setOrbs] = useState(0);
-    const [keys, setKeys] = useState(0);
-    const [gravityInverted, setGravityInverted] = useState(false);
-    const [gravityDuration, setGravityDuration] = useState(0);
-    const [notification, setNotification] = useState("");
-    const [prompt, setPrompt] = useState("");
-    const [damageFlash, setDamageFlash] = useState(false);
+    // Player HUD Signals
+    const [hp, setHp] = createSignal(100);
+    const [score, setScore] = createSignal(0);
+    const [orbs, setOrbs] = createSignal(0);
+    const [keys, setKeys] = createSignal(0);
+    const [gravityInverted, setGravityInverted] = createSignal(false);
+    const [gravityDuration, setGravityDuration] = createSignal(0);
+    const [notification, setNotification] = createSignal("");
+    const [prompt, setPrompt] = createSignal("");
+    const [damageFlash, setDamageFlash] = createSignal(false);
 
-    // Puzzle Modal Overlay States
-    const [activePuzzle, setActivePuzzle] = useState(null);
-    const [puzzleFeedback, setPuzzleFeedback] = useState("");
-    const [puzzleFeedbackType, setPuzzleFeedbackType] = useState(""); // "success" or "error"
-    const [shakeOverlay, setShakeOverlay] = useState(false);
+    // Puzzle Modal Overlay Signals
+    const [activePuzzle, setActivePuzzle] = createSignal(null);
+    const [puzzleFeedback, setPuzzleFeedback] = createSignal("");
+    const [puzzleFeedbackType, setPuzzleFeedbackType] = createSignal(""); // "success" or "error"
+    const [shakeOverlay, setShakeOverlay] = createSignal(false);
 
-    // Puzzle Inputs State
-    const [algebraDial, setAlgebraDial] = useState(8);
-    const [quadraticsRoot, setQuadraticsRoot] = useState(null);
-    const [trigRatio, setTrigRatio] = useState(null);
-    const [trigDistance, setTrigDistance] = useState(30);
-    const [logicOutput, setLogicOutput] = useState(null);
-    const [level, setLevel] = useState(1);
+    // Puzzle Inputs Signals
+    const [algebraDial, setAlgebraDial] = createSignal(8);
+    const [quadraticsRoot, setQuadraticsRoot] = createSignal(null);
+    const [trigRatio, setTrigRatio] = createSignal(null);
+    const [trigDistance, setTrigDistance] = createSignal(30);
+    const [logicOutput, setLogicOutput] = createSignal(null);
+    const [level, setLevel] = createSignal(1);
 
     // Initialize Game Engine once started
-    useEffect(() => {
-        if (!gameStarted || gameOver || victory) return;
+    createEffect(() => {
+        if (!gameStarted() || gameOver() || victory()) return;
 
         const handleHPChange = (newHp) => {
+            const currentHp = hp();
             setHp(newHp);
-            if (newHp < hp) {
+            if (newHp < currentHp) {
                 setDamageFlash(true);
                 setTimeout(() => setDamageFlash(false), 400);
             }
@@ -120,7 +123,7 @@ function App() {
             }
         };
 
-        GameEngine.start(canvasRef.current, {
+        GameEngine.start(canvasRef, {
             onHPChange: handleHPChange,
             onScoreChange: setScore,
             onOrbsChange: setOrbs,
@@ -139,7 +142,6 @@ function App() {
             },
             onOpenPuzzle: (vault) => {
                 setActivePuzzle(vault);
-                // Reset inputs dynamically based on vault details
                 setAlgebraDial(vault.defaultVal !== undefined ? vault.defaultVal : 8);
                 setQuadraticsRoot(null);
                 setTrigRatio(null);
@@ -169,10 +171,10 @@ function App() {
                     }
                 });
             }
-        }, level);
+        }, level());
 
         const handleLockChange = () => {
-            if (document.pointerLockElement === canvasRef.current || document.pointerLockElement === document.body) {
+            if (document.pointerLockElement === canvasRef || document.pointerLockElement === document.body) {
                 setIsLocked(true);
             } else {
                 setIsLocked(false);
@@ -187,36 +189,36 @@ function App() {
             }
         }, 300);
 
-        return () => {
+        onCleanup(() => {
             document.removeEventListener('pointerlockchange', handleLockChange);
             GameEngine.shutdown();
-        };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [gameStarted]);
+        });
+    });
 
     // Handle Puzzle sub-scene canvas rendering when open
-    useEffect(() => {
-        if (!activePuzzle || !puzzleCanvasRef.current) return;
+    createEffect(() => {
+        const puzzle = activePuzzle();
+        if (!puzzle || !puzzleCanvasRef) return;
 
         const cleanup = Vaults.setupPuzzleCanvas(
-            puzzleCanvasRef.current, 
-            activePuzzle.id
+            puzzleCanvasRef, 
+            puzzle.id
         );
 
-        return () => {
+        onCleanup(() => {
             cleanup();
-        };
-    }, [activePuzzle]);
+        });
+    });
 
     // Handle Minimap rendering loop
-    useEffect(() => {
-        if (!gameStarted || gameOver || victory) return;
+    createEffect(() => {
+        if (!gameStarted() || gameOver() || victory()) return;
         let animationId;
         
         const drawMinimap = () => {
             animationId = requestAnimationFrame(drawMinimap);
             
-            const canvas = minimapRef.current;
+            const canvas = minimapRef;
             if (!canvas) return;
             const ctx = canvas.getContext('2d');
             if (!ctx) return;
@@ -226,7 +228,6 @@ function App() {
             
             const { grid, openWorld, boundSize, buildingFootprints: footprints, playerPos, enemies, vaults, portalActive, portalCell, yaw } = data;
             
-            // Direct DOM manipulation for smooth, lag-free navigation HUD updates
             const headingEl = document.getElementById('nav-heading');
             const vaultEl = document.getElementById('nav-nearest-vault');
             const portalStatusEl = document.getElementById('nav-portal-status');
@@ -284,15 +285,10 @@ function App() {
             const cx = cw / 2;
             const cy = ch / 2;
             
-            // Map display range (how many world-units fit in the minimap radius)
-            // Center the entire map statically on (0, 0)
             const mapRange = openWorld ? (boundSize + 4.0) : (boundSize + 2.0);
             const mapRadius = Math.min(cx, cy) - 2;
             
-            // Convert world pos to static minimap pixel (North-Up, stable, centered on 0,0)
             const worldToMinimap = (wx, wz) => {
-                // Positive X is East (right), positive Z is South (down).
-                // So East goes right, North (negative Z) goes up.
                 const rx = wx;
                 const ry = -wz;
                 
@@ -302,7 +298,6 @@ function App() {
                 };
             };
 
-            // 1. Clear with a premium high-tech radial gradient background
             const bgGradient = ctx.createRadialGradient(cx, cy, 10, cx, cy, mapRadius);
             bgGradient.addColorStop(0, '#0a101d');
             bgGradient.addColorStop(0.8, '#05080f');
@@ -310,30 +305,25 @@ function App() {
             ctx.fillStyle = bgGradient;
             ctx.fillRect(0, 0, cw, ch);
             
-            // Circular clip mask
             ctx.save();
             ctx.beginPath();
             ctx.arc(cx, cy, mapRadius, 0, Math.PI * 2);
             ctx.clip();
             
-            // 2. Draw static level grid lines
             ctx.strokeStyle = 'rgba(0, 240, 255, 0.07)';
             ctx.lineWidth = 0.8;
             const gridStep = openWorld ? 10 : 4;
-            // Draw vertical grid lines
             for (let gx = -Math.ceil(mapRange/gridStep)*gridStep; gx <= mapRange; gx += gridStep) {
                 const a = worldToMinimap(gx, -mapRange);
                 const b = worldToMinimap(gx, mapRange);
                 ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
             }
-            // Draw horizontal grid lines
             for (let gz = -Math.ceil(mapRange/gridStep)*gridStep; gz <= mapRange; gz += gridStep) {
                 const a = worldToMinimap(-mapRange, gz);
                 const b = worldToMinimap(mapRange, gz);
                 ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
             }
 
-            // 3. Draw radar range/scan rings (premium graphic)
             ctx.strokeStyle = 'rgba(0, 240, 255, 0.05)';
             ctx.lineWidth = 1.0;
             ctx.beginPath();
@@ -343,7 +333,6 @@ function App() {
             ctx.arc(cx, cy, mapRadius * 0.66, 0, Math.PI * 2);
             ctx.stroke();
 
-            // 4. Draw a sweeping radar line (premium visual effect)
             const sweepAngle = (performance.now() * 0.0012) % (Math.PI * 2);
             ctx.beginPath();
             ctx.moveTo(cx, cy);
@@ -352,7 +341,6 @@ function App() {
             ctx.lineWidth = 1.2;
             ctx.stroke();
 
-            // Draw maze walls (for grid-based levels)
             const halfW = (cols * 4) / 2;
             const halfD = (rows * 4) / 2;
             
@@ -385,9 +373,6 @@ function App() {
                 }
             }
             
-            // (Building footprints drawing loop is completely removed per user request)
-            
-            // Draw active vaults with a glowing shadow
             vaults.forEach(v => {
                 if (v.unlocked) return;
                 const pos = worldToMinimap(v.position.x, v.position.z);
@@ -408,7 +393,6 @@ function App() {
                 ctx.stroke();
             });
             
-            // Draw active enemies with a glowing shadow (accurate tracking)
             enemies.forEach((e, idx) => {
                 if (e.dead) return;
                 const pos = worldToMinimap(e.mesh.position.x, e.mesh.position.z);
@@ -429,7 +413,6 @@ function App() {
                 ctx.stroke();
             });
             
-            // Draw portal
             if (portalActive && portalCell) {
                 const portalWorldX = -halfW + portalCell.x * 4 + 2;
                 const portalWorldZ = -halfD + portalCell.z * 4 + 2;
@@ -443,7 +426,7 @@ function App() {
                 ctx.fillStyle = '#00f0ff';
                 ctx.fill();
                 ctx.restore();
-
+ 
                 ctx.beginPath();
                 ctx.arc(pos.x, pos.y, 10.0 * pulse, 0, Math.PI * 2);
                 ctx.strokeStyle = 'rgba(0, 240, 255, 0.7)';
@@ -451,15 +434,12 @@ function App() {
                 ctx.stroke();
             }
             
-            // Draw player blip at their moving world coordinate, rotating with yaw direction
             const pPos = worldToMinimap(playerPos.x, playerPos.z);
             
             ctx.save();
             ctx.translate(pPos.x, pPos.y);
-            // Camera yaw angle negated to rotate player blip correctly clockwise on canvas
             ctx.rotate(-yaw);
             
-            // Draw player FOV cone (pointing UP relative to rotated context)
             ctx.beginPath();
             ctx.moveTo(0, 0);
             ctx.arc(0, 0, 32, -Math.PI / 2 - 0.35, -Math.PI / 2 + 0.35);
@@ -469,8 +449,7 @@ function App() {
             fovGradient.addColorStop(1, 'rgba(57, 255, 20, 0)');
             ctx.fillStyle = fovGradient;
             ctx.fill();
-
-            // Draw player green triangle blip (pointing UP relative to rotated context)
+ 
             ctx.beginPath();
             ctx.moveTo(0, -7);
             ctx.lineTo(-5, 5);
@@ -483,12 +462,11 @@ function App() {
             ctx.strokeStyle = '#ffffff';
             ctx.lineWidth = 1.2;
             ctx.stroke();
-            ctx.shadowBlur = 0; // reset shadow
+            ctx.shadowBlur = 0;
             
             ctx.restore();
-            ctx.restore(); // Remove circular clip
+            ctx.restore();
             
-            // Draw circular border with beautiful glow
             ctx.save();
             ctx.shadowColor = 'rgba(0, 240, 255, 0.6)';
             ctx.shadowBlur = 8;
@@ -499,7 +477,6 @@ function App() {
             ctx.stroke();
             ctx.restore();
             
-            // Compass labels (static directions: N is always UP, etc.)
             ctx.font = 'bold 9px Orbitron, monospace';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
@@ -518,10 +495,10 @@ function App() {
         };
         
         drawMinimap();
-        return () => {
+        onCleanup(() => {
             cancelAnimationFrame(animationId);
-        };
-    }, [gameStarted, gameOver, victory]);
+        });
+    });
 
     const handleEnterStation = () => {
         Sound.init();
@@ -542,7 +519,7 @@ function App() {
         setNotification("");
         setLevel(1);
         
-        if (gameStarted) {
+        if (gameStarted()) {
             setLoadingProgress(0);
             GameEngine.restart(1);
             setTimeout(() => {
@@ -564,7 +541,7 @@ function App() {
     };
 
     const handlePauseToggle = () => {
-        if (isPaused) {
+        if (isPaused()) {
             GameEngine.resume();
             setIsPaused(false);
             setTimeout(() => {
@@ -593,20 +570,20 @@ function App() {
 
     // Math Input Handlers
     const handleAlgebraChange = (dir) => {
-        let next = algebraDial;
-        const minVal = activePuzzle.min !== undefined ? activePuzzle.min : 1;
-        const maxVal = activePuzzle.max !== undefined ? activePuzzle.max : 20;
-        if (dir === 'inc' && algebraDial < maxVal) next++;
-        if (dir === 'dec' && algebraDial > minVal) next--;
+        let next = algebraDial();
+        const minVal = activePuzzle().min !== undefined ? activePuzzle().min : 1;
+        const maxVal = activePuzzle().max !== undefined ? activePuzzle().max : 20;
+        if (dir === 'inc' && algebraDial() < maxVal) next++;
+        if (dir === 'dec' && algebraDial() > minVal) next--;
         setAlgebraDial(next);
-        Vaults.updateVisualizer(activePuzzle.id, next);
+        Vaults.updateVisualizer(activePuzzle().id, next);
         Sound.playShoot();
     };
 
     const handleAlgebraSlider = (e) => {
         const val = parseInt(e.target.value);
         setAlgebraDial(val);
-        Vaults.updateVisualizer(activePuzzle.id, val);
+        Vaults.updateVisualizer(activePuzzle().id, val);
     };
 
     const handleQuadraticsLaunch = () => {
@@ -622,7 +599,7 @@ function App() {
     const handleTrigSelectRatio = (ratio) => {
         setTrigRatio(ratio);
         Sound.playPickup();
-        if (activePuzzle.options) {
+        if (activePuzzle().options) {
             setPuzzleFeedback(`Selected: ${ratio}m. Ready to submit.`);
             setPuzzleFeedbackType("success");
         } else {
@@ -639,63 +616,62 @@ function App() {
     const handleTrigSlider = (e) => {
         const val = parseInt(e.target.value);
         setTrigDistance(val);
-        Vaults.updateVisualizer(activePuzzle.id, val);
+        Vaults.updateVisualizer(activePuzzle().id, val);
     };
-
-
 
     // Verify Puzzle solution
     const handleSubmitAnswer = () => {
         let isCorrect = false;
         let errMsg = "";
 
-        const ans = activePuzzle.ans;
+        const puzzle = activePuzzle();
+        const ans = puzzle.ans;
 
-        if (activePuzzle.type === "algebra") {
-            if (algebraDial === ans) {
+        if (puzzle.type === "algebra") {
+            if (algebraDial() === ans) {
                 isCorrect = true;
             } else {
-                errMsg = `Incorrect: Current w is ${algebraDial} (Perimeter formula: ${activePuzzle.formula}).`;
+                errMsg = `Incorrect: Current w is ${algebraDial()} (Perimeter formula: ${puzzle.formula}).`;
             }
         } 
-        else if (activePuzzle.type === "geometry") {
-            if (algebraDial === ans) {
+        else if (puzzle.type === "geometry") {
+            if (algebraDial() === ans) {
                 isCorrect = true;
             } else {
-                errMsg = `Incorrect visual value. Expected: ${ans}. Formula: ${activePuzzle.formula}`;
+                errMsg = `Incorrect visual value. Expected: ${ans}. Formula: ${puzzle.formula}`;
             }
         }
-        else if (activePuzzle.type === "quadratics") {
-            if (quadraticsRoot === ans) {
+        else if (puzzle.type === "quadratics") {
+            if (quadraticsRoot() === ans) {
                 isCorrect = true;
             } else {
-                errMsg = `Incorrect root selected. Formula: ${activePuzzle.formula}`;
+                errMsg = `Incorrect root selected. Formula: ${puzzle.formula}`;
             }
         } 
-        else if (activePuzzle.type === "trig") {
-            if (activePuzzle.options) {
-                if (trigRatio === ans) {
+        else if (puzzle.type === "trig") {
+            if (puzzle.options) {
+                if (trigRatio() === ans) {
                     isCorrect = true;
                 } else {
-                    errMsg = `Incorrect value selected. Formula: ${activePuzzle.formula}`;
+                    errMsg = `Incorrect value selected. Formula: ${puzzle.formula}`;
                 }
             } else {
-                if (trigRatio === 'tan' && trigDistance === ans) {
+                if (trigRatio() === 'tan' && trigDistance() === ans) {
                     isCorrect = true;
                 } else {
-                    if (trigRatio !== 'tan') {
+                    if (trigRatio() !== 'tan') {
                         errMsg = "Check selected trigonometric ratio formula.";
                     } else {
-                        errMsg = `Lighthouse laser is not locked (Current: ${trigDistance}m). Formula: ${activePuzzle.formula}`;
+                        errMsg = `Lighthouse laser is not locked (Current: ${trigDistance()}m). Formula: ${puzzle.formula}`;
                     }
                 }
             }
         } 
-        else if (activePuzzle.type === "logic") {
-            if (logicOutput === ans) {
+        else if (puzzle.type === "logic") {
+            if (logicOutput() === ans) {
                 isCorrect = true;
             } else {
-                errMsg = `Incorrect logic gate output value. Formula: ${activePuzzle.formula}`;
+                errMsg = `Incorrect logic gate output value. Formula: ${puzzle.formula}`;
             }
         }
 
@@ -703,9 +679,8 @@ function App() {
             setPuzzleFeedback("VAULT SECURED! UNLOCKING CORE...");
             setPuzzleFeedbackType("success");
             
-            // Mark vault unlocked in three.js scene (spawns coins)
-            Vaults.markVaultUnlocked(activePuzzle.id);
-            Player.incrementScore(); // updates score and checks victory
+            Vaults.markVaultUnlocked(puzzle.id);
+            Player.incrementScore();
 
             setTimeout(() => {
                 setActivePuzzle(null);
@@ -717,10 +692,8 @@ function App() {
             setPuzzleFeedback(errMsg || "Verification Failed. Decryption Error.");
             setPuzzleFeedbackType("error");
             
-            // Deal damage (6 HP - lighter balance!)
             Player.damage(6);
             
-            // Trigger overlay shake
             setShakeOverlay(true);
             setTimeout(() => setShakeOverlay(false), 450);
         }
@@ -729,75 +702,75 @@ function App() {
     // Calculate SVG Timer variables
     const maxTimer = 30;
     const svgCircumference = 2 * Math.PI * 16;
-    const svgOffset = svgCircumference * (1 - (gravityDuration / maxTimer));
+    const svgOffset = () => svgCircumference * (1 - (gravityDuration() / maxTimer));
 
     return (
-        <div className="App">
+        <div class="App">
             {/* Title / Startup Screen */}
-            {!gameStarted && (
-                <div id="start-screen" className="overlay-screen active comic-theme">
+            <Show when={!gameStarted()}>
+                <div id="start-screen" class="overlay-screen active comic-theme">
                     {/* Comic Top Bar */}
-                    <div className="comic-top-bar animate-panel-pop">
-                        <div className="comic-title-container">
-                            <h1 className="comic-game-title font-orbitron">MATH VAULT</h1>
-                            <div className="comic-burst animate-bounce-slow">
-                                <span className="burst-text font-orbitron">ANTI-GRAVITY!</span>
+                    <div class="comic-top-bar animate-panel-pop">
+                        <div class="comic-title-container">
+                            <h1 class="comic-game-title font-orbitron">MATH VAULT</h1>
+                            <div class="comic-burst animate-bounce-slow">
+                                <span class="burst-text font-orbitron">ANTI-GRAVITY!</span>
                             </div>
                         </div>
-                        <label className="dev-bypass-toggle font-orbitron comic-bypass">
+                        <label class="dev-bypass-toggle font-orbitron comic-bypass">
                             <input 
                                 type="checkbox" 
-                                checked={devBypass} 
+                                checked={devBypass()} 
                                 onChange={(e) => setDevBypass(e.target.checked)} 
                             />
-                            <span className="toggle-slider"></span>
-                            <span className="toggle-label">DEV BYPASS</span>
+                            <span class="toggle-slider"></span>
+                            <span class="toggle-label">DEV BYPASS</span>
                         </label>
                     </div>
 
                     {/* Comic Book Spread Slider */}
-                    <div className="comic-slider-container">
-                        <button className="comic-nav-arrow prev font-orbitron animate-pulse-slow" onClick={handlePrevLevel}>
+                    <div class="comic-slider-container">
+                        <button class="comic-nav-arrow prev font-orbitron animate-pulse-slow" onClick={handlePrevLevel}>
                             &lsaquo;
                         </button>
 
-                        <div className="comic-spread">
+                        <div class="comic-spread">
                             {/* Left Page: Mission Dossier */}
-                            <div className="comic-panel left-panel-dossier animate-panel-pop" key={`left-${activeLevelIndex}`}>
-                                <div className="panel-dots-bg"></div>
-                                <div className="panel-border-skew"></div>
-                                <div className="panel-content">
-                                    <div className="panel-badge-row">
-                                        <span className="panel-badge-level font-orbitron" style={{ color: LEVEL_CARDS_DATA[activeLevelIndex].color }}>
-                                            {LEVEL_CARDS_DATA[activeLevelIndex].id > unlockedLevels && !devBypass ? '🔒 LOCKED' : `LVL ${LEVEL_CARDS_DATA[activeLevelIndex].id}`}
+                            <div class="comic-panel left-panel-dossier animate-panel-pop">
+                                <div class="panel-dots-bg"></div>
+                                <div class="panel-border-skew"></div>
+                                <div class="panel-content">
+                                    <div class="panel-badge-row">
+                                        <span class="panel-badge-level font-orbitron" style={{ color: LEVEL_CARDS_DATA[activeLevelIndex()].color }}>
+                                            {LEVEL_CARDS_DATA[activeLevelIndex()].id > unlockedLevels() && !devBypass() ? '🔒 LOCKED' : `LVL ${LEVEL_CARDS_DATA[activeLevelIndex()].id}`}
                                         </span>
-                                        <span className={`panel-badge-diff font-orbitron ${LEVEL_CARDS_DATA[activeLevelIndex].diff.toLowerCase().replace(" ", "-")}`}>
-                                            {LEVEL_CARDS_DATA[activeLevelIndex].diff}
+                                        <span class={`panel-badge-diff font-orbitron ${LEVEL_CARDS_DATA[activeLevelIndex()].diff.toLowerCase().replace(" ", "-")}`}>
+                                            {LEVEL_CARDS_DATA[activeLevelIndex()].diff}
                                         </span>
                                     </div>
-                                    <div className="panel-main-info">
-                                        <div className="comic-icon-large">
-                                            {LEVEL_CARDS_DATA[activeLevelIndex].id > unlockedLevels && !devBypass ? '🔒' : LEVEL_CARDS_DATA[activeLevelIndex].icon}
+                                    <div class="panel-main-info">
+                                        <div class="comic-icon-large">
+                                            {LEVEL_CARDS_DATA[activeLevelIndex()].id > unlockedLevels() && !devBypass() ? '🔒' : LEVEL_CARDS_DATA[activeLevelIndex()].icon}
                                         </div>
-                                        <h2 className="comic-level-name font-orbitron">
-                                            {LEVEL_CARDS_DATA[activeLevelIndex].name.split(': ')[1]}
+                                        <h2 class="comic-level-name font-orbitron">
+                                            {LEVEL_CARDS_DATA[activeLevelIndex()].name.split(': ')[1]}
                                         </h2>
-                                        <div className="comic-concept-badge font-rajdhani">
-                                            <span className="concept-label font-orbitron">TARGET CONCEPTS:</span>
-                                            <p className="concept-text">{LEVEL_CARDS_DATA[activeLevelIndex].concept}</p>
+                                        <div class="comic-concept-badge font-rajdhani">
+                                            <span class="concept-label font-orbitron">TARGET CONCEPTS:</span>
+                                            <p class="concept-text">{LEVEL_CARDS_DATA[activeLevelIndex()].concept}</p>
                                         </div>
                                     </div>
-                                    <div className="comic-danger-progress">
-                                        <div className="danger-labels font-orbitron">
+                                    <div class="comic-danger-progress">
+                                        <div class="danger-labels font-orbitron">
                                             <span>DANGER RATING</span>
-                                            <span>{LEVEL_CARDS_DATA[activeLevelIndex].difficultyProgress}%</span>
+                                            <span>{LEVEL_CARDS_DATA[activeLevelIndex()].difficultyProgress}%</span>
                                         </div>
-                                        <div className="danger-track">
+                                        <div class="danger-track">
                                             <div 
-                                                className="danger-fill" 
+                                                class="danger-fill" 
                                                 style={{ 
-                                                    width: `${LEVEL_CARDS_DATA[activeLevelIndex].difficultyProgress}%`,
-                                                    background: LEVEL_CARDS_DATA[activeLevelIndex].id > unlockedLevels && !devBypass ? '#4b5563' : LEVEL_CARDS_DATA[activeLevelIndex].color
+                                                    width: `${LEVEL_CARDS_DATA[activeLevelIndex()].difficultyProgress}%`,
+                                                    background: LEVEL_CARDS_DATA[activeLevelIndex()].id > unlockedLevels() && !devBypass() ? '#4b5563' : LEVEL_CARDS_DATA[activeLevelIndex()].color
                                                 }}
                                             ></div>
                                         </div>
@@ -806,33 +779,33 @@ function App() {
                             </div>
 
                             {/* Right Page: Formula File */}
-                            <div className="comic-panel right-panel-formula animate-panel-pop" key={`right-${activeLevelIndex}`}>
-                                <div className="panel-dots-bg"></div>
-                                <div className="panel-border-skew"></div>
-                                <div className="panel-content">
-                                    <div className="formula-header-tab font-orbitron">
+                            <div class="comic-panel right-panel-formula animate-panel-pop">
+                                <div class="panel-dots-bg"></div>
+                                <div class="panel-border-skew"></div>
+                                <div class="panel-content">
+                                    <div class="formula-header-tab font-orbitron">
                                         📁 DECRYPTION SCHEMA
                                     </div>
-                                    <div className="formula-dossier-body font-rajdhani">
-                                        <div className="comic-formula-display font-orbitron">
-                                            {LEVEL_CARDS_DATA[activeLevelIndex].id > unlockedLevels && !devBypass ? 'CLASSIFIED' : LEVEL_CARDS_DATA[activeLevelIndex].formulaText}
+                                    <div class="formula-dossier-body font-rajdhani">
+                                        <div class="comic-formula-display font-orbitron">
+                                            {LEVEL_CARDS_DATA[activeLevelIndex()].id > unlockedLevels() && !devBypass() ? 'CLASSIFIED' : LEVEL_CARDS_DATA[activeLevelIndex()].formulaText}
                                         </div>
-                                        <p className="comic-formula-instructions">
-                                            {LEVEL_CARDS_DATA[activeLevelIndex].id > unlockedLevels && !devBypass 
+                                        <p class="comic-formula-instructions">
+                                            {LEVEL_CARDS_DATA[activeLevelIndex()].id > unlockedLevels() && !devBypass() 
                                                 ? 'DECRYPT PREVIOUS VAULTS TO DISCLOSE FORMULA SPECIFICATIONS.' 
-                                                : LEVEL_CARDS_DATA[activeLevelIndex].formulaDesc}
+                                                : LEVEL_CARDS_DATA[activeLevelIndex()].formulaDesc}
                                         </p>
                                     </div>
-                                    <div className="comic-launch-panel">
-                                        {LEVEL_CARDS_DATA[activeLevelIndex].id > unlockedLevels && !devBypass ? (
-                                            <div className="comic-warning-stamp font-orbitron">
+                                    <div class="comic-launch-panel">
+                                        {LEVEL_CARDS_DATA[activeLevelIndex()].id > unlockedLevels() && !devBypass() ? (
+                                            <div class="comic-warning-stamp font-orbitron">
                                                 LOCKED!
                                             </div>
                                         ) : (
                                             <button 
-                                                className="comic-launch-button font-orbitron"
+                                                class="comic-launch-button font-orbitron"
                                                 onClick={() => {
-                                                    setLevel(LEVEL_CARDS_DATA[activeLevelIndex].id);
+                                                    setLevel(LEVEL_CARDS_DATA[activeLevelIndex()].id);
                                                     handleEnterStation();
                                                 }}
                                             >
@@ -844,53 +817,54 @@ function App() {
                             </div>
                         </div>
 
-                        <button className="comic-nav-arrow next font-orbitron animate-pulse-slow" onClick={handleNextLevel}>
+                        <button class="comic-nav-arrow next font-orbitron animate-pulse-slow" onClick={handleNextLevel}>
                             &rsaquo;
                         </button>
                     </div>
 
                     {/* Comic Bottom Control & Mascot Briefing */}
-                    <div className="comic-bottom-panel animate-panel-pop">
+                    <div class="comic-bottom-panel animate-panel-pop">
                         {/* Controls Panel */}
-                        <div className="comic-panel bottom-controls font-rajdhani">
-                            <div className="panel-border-skew"></div>
-                            <div className="panel-content">
-                                <h3 className="controls-heading font-orbitron">🎮 MOVEMENT BRIEFING</h3>
-                                <div className="controls-grid">
-                                    <div className="control-item"><span className="comic-key">W</span><span className="comic-key">A</span><span className="comic-key">S</span><span className="comic-key">D</span> MOVE</div>
-                                    <div className="control-item"><span className="comic-key">G</span> ANTI-GRAVITY</div>
-                                    <div className="control-item"><span className="comic-key">E</span> DECRYPT / INTERACT</div>
-                                    <div className="control-item"><span className="comic-key">CLICK</span> SHOTGUN</div>
+                        <div class="comic-panel bottom-controls font-rajdhani">
+                            <div class="panel-border-skew"></div>
+                            <div class="panel-content">
+                                <h3 class="controls-heading font-orbitron">🎮 MOVEMENT BRIEFING</h3>
+                                <div class="controls-grid">
+                                    <div class="control-item"><span class="comic-key">W</span><span class="comic-key">A</span><span class="comic-key">S</span><span class="comic-key">D</span> MOVE</div>
+                                    <div class="control-item"><span class="comic-key">G</span> ANTI-GRAVITY</div>
+                                    <div class="control-item"><span class="comic-key">E</span> DECRYPT / INTERACT</div>
+                                    <div class="control-item"><span class="comic-key">CLICK</span> SHOTGUN</div>
                                 </div>
                             </div>
                         </div>
 
                         {/* Level Navigation Dots Selector */}
-                        <div className="comic-quick-selector font-orbitron">
-                            {LEVEL_CARDS_DATA.map((card, idx) => {
-                                const cardIsLocked = card.id > unlockedLevels && !devBypass;
-                                const isSelected = idx === activeLevelIndex;
-                                return (
-                                    <button
-                                        key={card.id}
-                                        className={`comic-selector-dot ${isSelected ? 'selected' : ''} ${cardIsLocked ? 'locked' : ''}`}
-                                        onClick={() => setActiveLevelIndex(idx)}
-                                        style={{ 
-                                            borderColor: isSelected ? card.color : '#000',
-                                            backgroundColor: isSelected ? card.color : (cardIsLocked ? 'rgba(0,0,0,0.5)' : '#1e293b')
-                                        }}
-                                    >
-                                        {cardIsLocked ? '🔒' : card.id}
-                                    </button>
-                                );
-                            })}
+                        <div class="comic-quick-selector font-orbitron">
+                            <For each={LEVEL_CARDS_DATA}>
+                                {(card, idx) => {
+                                    const cardIsLocked = () => card.id > unlockedLevels() && !devBypass();
+                                    const isSelected = () => idx() === activeLevelIndex();
+                                    return (
+                                        <button
+                                            class={`comic-selector-dot ${isSelected() ? 'selected' : ''} ${cardIsLocked() ? 'locked' : ''}`}
+                                            onClick={() => setActiveLevelIndex(idx())}
+                                            style={{ 
+                                                'border-color': isSelected() ? card.color : '#000',
+                                                'background-color': isSelected() ? card.color : (cardIsLocked() ? 'rgba(0,0,0,0.5)' : '#1e293b')
+                                            }}
+                                        >
+                                            {cardIsLocked() ? '🔒' : card.id}
+                                        </button>
+                                    );
+                                }}
+                            </For>
                         </div>
 
                         {/* Mascot Speech Bubble */}
-                        <div className="comic-briefing">
-                            <div className="mascot-badge animate-bounce-slow">🤖</div>
-                            <div className="comic-speech-bubble font-rajdhani">
-                                <div className="bubble-pointer"></div>
+                        <div class="comic-briefing">
+                            <div class="mascot-badge animate-bounce-slow">🤖</div>
+                            <div class="comic-speech-bubble font-rajdhani">
+                                <div class="bubble-pointer"></div>
                                 <p>
                                     Decrypt the math chests in each zone, defeat dynamic insect guards, and secure the keys to escape! Use your holographic heading dashboard to navigate.
                                 </p>
@@ -898,335 +872,332 @@ function App() {
                         </div>
                     </div>
                 </div>
-            )}
+            </Show>
 
             {/* Main Game Screen */}
-            {gameStarted && (
-                <>
-                    <canvas 
-                        id="game-canvas" 
-                        ref={canvasRef}
-                        className={(!isLocked && isHovered) ? 'hover-unlocked' : ''}
-                        onMouseEnter={() => setIsHovered(true)}
-                        onMouseLeave={() => setIsHovered(false)}
-                        onMouseMove={(e) => setMousePos({ x: e.clientX, y: e.clientY })}
-                    ></canvas>
-                    <div id="crosshair"></div>
+            <Show when={gameStarted()}>
+                <canvas 
+                    id="game-canvas" 
+                    ref={canvasRef}
+                    class={(!isLocked() && isHovered()) ? 'hover-unlocked' : ''}
+                    onMouseEnter={() => setIsHovered(true)}
+                    onMouseLeave={() => setIsHovered(false)}
+                    onMouseMove={(e) => setMousePos({ x: e.clientX, y: e.clientY })}
+                ></canvas>
+                <div id="crosshair"></div>
 
-                    {/* HUD Overlay */}
-                    <div id="hud" className={gravityInverted ? 'gravity-inverted' : ''}>
-                        {/* Top Center Pause Control */}
-                        <button 
-                            className="hud-pause-btn font-orbitron" 
-                            style={{ 
-                                pointerEvents: 'auto',
-                                position: 'absolute',
-                                top: '20px',
-                                left: '50%',
-                                transform: 'translateX(-50%)',
-                                zIndex: 100,
-                                background: 'var(--bg-glass)',
-                                border: '1px solid var(--border-glass)',
-                                color: 'var(--color-primary)',
-                                textShadow: 'var(--glow-cyan)',
-                                padding: '8px 16px',
-                                borderRadius: '4px',
-                                cursor: 'pointer',
-                                fontWeight: 'bold',
-                                fontSize: '0.85rem'
-                            }}
-                            onClick={handlePauseToggle}
-                        >
-                            {isPaused ? '▶ RESUME' : '⏸ PAUSE'}
-                        </button>
-                        
-                        {/* Stats Panel */}
-                        <div className="hud-panel left-panel">
-                            <div className="stat-row">
-                                <span className="stat-label font-orbitron">HP</span>
-                                <div className="bar-container">
-                                    <div className="bar-fill hp-fill" style={{ width: `${hp}%` }}></div>
-                                </div>
-                                <span className="stat-value font-orbitron">{Math.round(hp)}</span>
+                {/* HUD Overlay */}
+                <div id="hud" class={gravityInverted() ? 'gravity-inverted' : ''}>
+                    {/* Top Center Pause Control */}
+                    <button 
+                        class="hud-pause-btn font-orbitron" 
+                        style={{ 
+                            'pointer-events': 'auto',
+                            position: 'absolute',
+                            top: '20px',
+                            left: '50%',
+                            transform: 'translateX(-50%)',
+                            'z-index': 100,
+                            background: 'var(--bg-glass)',
+                            border: '1px solid var(--border-glass)',
+                            color: 'var(--color-primary)',
+                            'text-shadow': 'var(--glow-cyan)',
+                            padding: '8px 16px',
+                            'border-radius': '4px',
+                            cursor: 'pointer',
+                            'font-weight': 'bold',
+                            'font-size': '0.85rem'
+                        }}
+                        onClick={handlePauseToggle}
+                    >
+                        {isPaused() ? '▶ RESUME' : '⏸ PAUSE'}
+                    </button>
+                    
+                    {/* Stats Panel */}
+                    <div class="hud-panel left-panel">
+                        <div class="stat-row">
+                            <span class="stat-label font-orbitron">HP</span>
+                            <div class="bar-container">
+                                <div class="bar-fill hp-fill" style={{ width: `${hp()}%` }}></div>
                             </div>
-                            <div className="stat-row">
-                                <span className="stat-label font-orbitron">LEVEL</span>
-                                <span className="stat-value text-gold font-orbitron">{level} / 9</span>
-                            </div>
-                            <div className="stat-row">
-                                <span className="stat-label font-orbitron">DECRYPTED</span>
-                                <span className="stat-value text-gold font-orbitron">{score} / 3</span>
-                            </div>
-                            <div className="stat-row">
-                                <span className="stat-label font-orbitron">KEYS HELD</span>
-                                <span className="stat-value text-gold font-orbitron">{keys} / 3 🔑</span>
-                            </div>
+                            <span class="stat-value font-orbitron">{Math.round(hp())}</span>
                         </div>
-
-
-                        {/* Right HUD Panel (Minimap Only) */}
-                        <div className="hud-panel right-panel">
-                            <div className="minimap-container">
-                                <canvas ref={minimapRef} width="180" height="180" id="minimap-canvas"></canvas>
-                            </div>
+                        <div class="stat-row">
+                            <span class="stat-label font-orbitron">LEVEL</span>
+                            <span class="stat-value text-gold font-orbitron">{level()} / 3</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label font-orbitron">DECRYPTED</span>
+                            <span class="stat-value text-gold font-orbitron">{score()} / 3</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label font-orbitron">KEYS HELD</span>
+                            <span class="stat-value text-gold font-orbitron">{keys()} / 3 🔑</span>
                         </div>
                     </div>
 
-                    {/* Damage and Inversion Vignettes */}
-                    <div id="damage-vignette" className={damageFlash ? 'flash' : ''}></div>
-                    <div id="gravity-vignette" className={gravityInverted ? 'active' : ''}></div>
-
-                    {/* Action Toast Prompts */}
-                    <div id="action-prompt" className={prompt ? 'font-rajdhani active' : 'font-rajdhani'}>
-                        {prompt || notification}
+                    {/* Right HUD Panel (Minimap Only) */}
+                    <div class="hud-panel right-panel">
+                        <div class="minimap-container">
+                            <canvas ref={minimapRef} width="180" height="180" id="minimap-canvas"></canvas>
+                        </div>
                     </div>
-                </>
-            )}
+                </div>
 
+                {/* Damage and Inversion Vignettes */}
+                <div id="damage-vignette" class={damageFlash() ? 'flash' : ''}></div>
+                <div id="gravity-vignette" class={gravityInverted() ? 'active' : ''}></div>
+
+                {/* Action Toast Prompts */}
+                <div id="action-prompt" class={prompt() ? 'font-rajdhani active' : 'font-rajdhani'}>
+                    {prompt() || notification()}
+                </div>
+            </Show>
 
             {/* Pause Screen Overlay */}
-            {isPaused && (
-                <div id="pause-screen" className="overlay-screen active" style={{ zIndex: 9999 }}>
-                    <div className="glass-container menu-box">
-                        <h1 className="game-title font-orbitron" style={{ color: 'var(--color-primary)' }}>GAME PAUSED</h1>
-                        <p className="game-subtitle font-rajdhani">Click Resume or hit Pause to return to the mission.</p>
-                        <button onClick={handleResume} className="glow-button font-orbitron" style={{ width: '200px' }}>RESUME</button>
+            <Show when={isPaused()}>
+                <div id="pause-screen" class="overlay-screen active" style={{ 'z-index': 9999 }}>
+                    <div class="glass-container menu-box">
+                        <h1 class="game-title font-orbitron" style={{ color: 'var(--color-primary)' }}>GAME PAUSED</h1>
+                        <p class="game-subtitle font-rajdhani">Click Resume or hit Pause to return to the mission.</p>
+                        <button onClick={handleResume} class="glow-button font-orbitron" style={{ width: '200px' }}>RESUME</button>
                     </div>
                 </div>
-            )}
+            </Show>
 
             {/* Game Over Screen */}
-            {gameOver && (
-                <div id="end-screen" className="overlay-screen active">
-                    <div className="glass-container menu-box">
-                        <h1 className="game-title font-orbitron" style={{ color: 'var(--color-accent)' }}>SYSTEM FAILURE</h1>
-                        <p className="game-subtitle font-orbitron">Your health dropped to 0%.</p>
-                        <button onClick={handleRedeploy} className="glow-button font-orbitron">REDEPLOY</button>
+            <Show when={gameOver()}>
+                <div id="end-screen" class="overlay-screen active">
+                    <div class="glass-container menu-box">
+                        <h1 class="game-title font-orbitron" style={{ color: 'var(--color-accent)' }}>SYSTEM FAILURE</h1>
+                        <p class="game-subtitle font-orbitron">Your health dropped to 0%.</p>
+                        <button onClick={handleRedeploy} class="glow-button font-orbitron">REDEPLOY</button>
                     </div>
                 </div>
-            )}
+            </Show>
 
             {/* Victory Screen */}
-            {victory && (
-                <div id="end-screen" className="overlay-screen active">
-                    <div className="glass-container menu-box">
-                        <h1 className="game-title font-orbitron" style={{ color: 'var(--color-success)' }}>MISSION SECURED</h1>
-                        <p className="game-subtitle font-orbitron">All treasure vaults decrypted.</p>
-                        <button onClick={handleRedeploy} className="glow-button font-orbitron">REPLAY</button>
+            <Show when={victory()}>
+                <div id="end-screen" class="overlay-screen active">
+                    <div class="glass-container menu-box">
+                        <h1 class="game-title font-orbitron" style={{ color: 'var(--color-success)' }}>MISSION SECURED</h1>
+                        <p class="game-subtitle font-orbitron">All treasure vaults decrypted.</p>
+                        <button onClick={handleRedeploy} class="glow-button font-orbitron">REPLAY</button>
                     </div>
                 </div>
-            )}
+            </Show>
 
             {/* Math Puzzle Modal Overlay */}
-            {activePuzzle && (
-                <div id="puzzle-overlay" className="overlay-screen active">
-                    <div className={`puzzle-container glass-container ${shakeOverlay ? 'shake' : ''}`}>
-                        
-                        {/* Sidebar controls */}
-                        <div className="puzzle-sidebar">
-                            <div className="puzzle-header">
-                                <span className="zone-badge font-orbitron">
-                                    {activePuzzle.type.toUpperCase()} VAULT
-                                </span>
-                                <h2 className="font-orbitron">
-                                    {activePuzzle.name}
-                                </h2>
-                            </div>
-                            
-                            <div className="puzzle-body font-rajdhani">
-                                {(activePuzzle.type === "algebra" || activePuzzle.type === "geometry") && (
-                                    <>
-                                        <p className="problem-description">{activePuzzle.problem}</p>
-                                        <div className="input-group">
-                                            <span className="input-label">{activePuzzle.label || "Value"}</span>
-                                            {activePuzzle.options ? (
-                                                <div className="button-grid">
-                                                    {activePuzzle.options.map(opt => (
-                                                        <button 
-                                                            key={opt}
-                                                            onClick={() => {
-                                                                setAlgebraDial(opt);
-                                                                Vaults.updateVisualizer(activePuzzle.id, opt);
-                                                                Sound.playPickup();
-                                                            }}
-                                                            className={algebraDial === opt ? "ratio-btn active" : "ratio-btn"}
-                                                        >
-                                                            {opt}
-                                                        </button>
-                                                    ))}
+            <Show when={activePuzzle()}>
+                {(() => {
+                    const puzzle = activePuzzle();
+                    return (
+                        <div id="puzzle-overlay" class="overlay-screen active">
+                            <div class={`puzzle-container glass-container ${shakeOverlay() ? 'shake' : ''}`}>
+                                
+                                {/* Sidebar controls */}
+                                <div class="puzzle-sidebar">
+                                    <div class="puzzle-header">
+                                        <span class="zone-badge font-orbitron">
+                                            {puzzle.type.toUpperCase()} VAULT
+                                        </span>
+                                        <h2 class="font-orbitron">
+                                            {puzzle.name}
+                                        </h2>
+                                    </div>
+                                    
+                                    <div class="puzzle-body font-rajdhani">
+                                        <Show when={puzzle.type === "algebra" || puzzle.type === "geometry"}>
+                                            <p class="problem-description">{puzzle.problem}</p>
+                                            <div class="input-group">
+                                                <span class="input-label">{puzzle.label || "Value"}</span>
+                                                <Show when={puzzle.options} fallback={
+                                                    puzzle.max - puzzle.min > 30 ? (
+                                                        <div style={{ 'margin-top': '10px' }}>
+                                                            <span class="input-label">Current: <span class="text-gold">{algebraDial()}</span></span>
+                                                            <input 
+                                                                type="range" 
+                                                                min={puzzle.min} 
+                                                                max={puzzle.max} 
+                                                                value={algebraDial()} 
+                                                                onInput={handleAlgebraSlider}
+                                                                class="cyber-slider" 
+                                                            />
+                                                        </div>
+                                                    ) : (
+                                                        <div class="dial-controls">
+                                                            <button onClick={() => handleAlgebraChange('dec')} class="dial-btn">-</button>
+                                                            <span class="dial-value">{algebraDial()}</span>
+                                                            <button onClick={() => handleAlgebraChange('inc')} class="dial-btn">+</button>
+                                                        </div>
+                                                    )
+                                                }>
+                                                    <div class="button-grid">
+                                                        <For each={puzzle.options}>
+                                                            {(opt) => (
+                                                                <button 
+                                                                    onClick={() => {
+                                                                        setAlgebraDial(opt);
+                                                                        Vaults.updateVisualizer(puzzle.id, opt);
+                                                                        Sound.playPickup();
+                                                                    }}
+                                                                    class={algebraDial() === opt ? "ratio-btn active" : "ratio-btn"}
+                                                                >
+                                                                    {opt}
+                                                                </button>
+                                                            )}
+                                                        </For>
+                                                    </div>
+                                                </Show>
+                                            </div>
+                                        </Show>
+
+                                        <Show when={puzzle.type === "quadratics"}>
+                                            <p class="problem-description">{puzzle.problem}</p>
+                                            <button onClick={handleQuadraticsLaunch} class="glow-button font-orbitron" style={{ 'margin-bottom': '15px' }}>
+                                                LAUNCH PROJECTILE
+                                            </button>
+                                            <Show when={puzzle.options}>
+                                                <div class="input-group">
+                                                    <span class="input-label">Select Ground Intersection Root</span>
+                                                    <div class="button-grid">
+                                                        <For each={puzzle.options}>
+                                                            {(opt) => (
+                                                                <button 
+                                                                    onClick={() => handleQuadraticsSelectRoot(opt)} 
+                                                                    class={quadraticsRoot() === opt ? "ratio-btn active" : "ratio-btn"}
+                                                                >
+                                                                    t = {opt}s
+                                                                </button>
+                                                            )}
+                                                        </For>
+                                                    </div>
                                                 </div>
-                                            ) : (
-                                                activePuzzle.max - activePuzzle.min > 30 ? (
-                                                    <div style={{ marginTop: '10px' }}>
-                                                        <span className="input-label">Current: <span className="text-gold">{algebraDial}</span></span>
+                                            </Show>
+                                        </Show>
+
+                                        <Show when={puzzle.type === "trig"}>
+                                            <p class="problem-description">{puzzle.problem}</p>
+                                            <Show when={puzzle.options} fallback={
+                                                <>
+                                                    <div class="input-group">
+                                                        <span class="input-label">Select Trig Ratio Formula</span>
+                                                        <div class="button-grid">
+                                                            <For each={['sin', 'cos', 'tan']}>
+                                                                {(ratio) => (
+                                                                    <button 
+                                                                        onClick={() => handleTrigSelectRatio(ratio)}
+                                                                        class={trigRatio() === ratio ? "ratio-btn active" : "ratio-btn"}
+                                                                    >
+                                                                        {ratio} 30°
+                                                                    </button>
+                                                                )}
+                                                            </For>
+                                                        </div>
+                                                    </div>
+                                                    <div class="input-group" style={{ 'margin-top': '10px' }}>
+                                                        <span class="input-label">Distance (d): <span class="text-gold">{trigDistance()}m</span></span>
                                                         <input 
                                                             type="range" 
-                                                            min={activePuzzle.min} 
-                                                            max={activePuzzle.max} 
-                                                            value={algebraDial} 
-                                                            onChange={handleAlgebraSlider}
-                                                            className="cyber-slider" 
+                                                            min={puzzle.min} 
+                                                            max={puzzle.max} 
+                                                            value={trigDistance()} 
+                                                            onInput={handleTrigSlider}
+                                                            class="cyber-slider" 
                                                         />
                                                     </div>
-                                                ) : (
-                                                    <div className="dial-controls">
-                                                        <button onClick={() => handleAlgebraChange('dec')} className="dial-btn">-</button>
-                                                        <span className="dial-value">{algebraDial}</span>
-                                                        <button onClick={() => handleAlgebraChange('inc')} className="dial-btn">+</button>
-                                                    </div>
-                                                )
-                                            )}
-                                        </div>
-                                    </>
-                                )}
-
-                                {activePuzzle.type === "quadratics" && (
-                                    <>
-                                        <p className="problem-description">{activePuzzle.problem}</p>
-                                        <button onClick={handleQuadraticsLaunch} className="glow-button font-orbitron" style={{ marginBottom: '15px' }}>
-                                            LAUNCH PROJECTILE
-                                        </button>
-                                        {activePuzzle.options && (
-                                            <div className="input-group">
-                                                <span className="input-label">Select Ground Intersection Root</span>
-                                                <div className="button-grid">
-                                                    {activePuzzle.options.map(opt => (
-                                                        <button 
-                                                            key={opt}
-                                                            onClick={() => handleQuadraticsSelectRoot(opt)} 
-                                                            className={quadraticsRoot === opt ? "ratio-btn active" : "ratio-btn"}
-                                                        >
-                                                            t = {opt}s
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        )}
-                                    </>
-                                )}
-
-                                {activePuzzle.type === "trig" && (
-                                    <>
-                                        <p className="problem-description">{activePuzzle.problem}</p>
-                                        {activePuzzle.options ? (
-                                            <div className="input-group">
-                                                <span className="input-label">Select Dimension Value</span>
-                                                <div className="button-grid">
-                                                    {activePuzzle.options.map(opt => (
-                                                        <button 
-                                                            key={opt}
-                                                            onClick={() => handleTrigSelectRatio(opt)}
-                                                            className={trigRatio === opt ? "ratio-btn active" : "ratio-btn"}
-                                                        >
-                                                            {opt}m
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <>
-                                                <div className="input-group">
-                                                    <span className="input-label">Select Trig Ratio Formula</span>
-                                                    <div className="button-grid">
-                                                        {['sin', 'cos', 'tan'].map(ratio => (
-                                                            <button 
-                                                                key={ratio}
-                                                                onClick={() => handleTrigSelectRatio(ratio)}
-                                                                className={trigRatio === ratio ? "ratio-btn active" : "ratio-btn"}
-                                                            >
-                                                                {ratio} 30°
-                              </button>
-                                                        ))}
+                                                </>
+                                            }>
+                                                <div class="input-group">
+                                                    <span class="input-label">Select Dimension Value</span>
+                                                    <div class="button-grid">
+                                                        <For each={puzzle.options}>
+                                                            {(opt) => (
+                                                                <button 
+                                                                    onClick={() => handleTrigSelectRatio(opt)}
+                                                                    class={trigRatio() === opt ? "ratio-btn active" : "ratio-btn"}
+                                                                >
+                                                                    {opt}m
+                                                                </button>
+                                                            )}
+                                                        </For>
                                                     </div>
                                                 </div>
-                                                <div className="input-group" style={{ marginTop: '10px' }}>
-                                                    <span className="input-label">Distance (d): <span className="text-gold">{trigDistance}m</span></span>
-                                                    <input 
-                                                        type="range" 
-                                                        min={activePuzzle.min} 
-                                                        max={activePuzzle.max} 
-                                                        value={trigDistance} 
-                                                        onChange={handleTrigSlider}
-                                                        className="cyber-slider" 
-                                                    />
+                                            </Show>
+                                        </Show>
+
+                                        <Show when={puzzle.type === "logic"}>
+                                            <p class="problem-description">{puzzle.problem}</p>
+                                            <div class="input-group">
+                                                <span class="input-label">Select Gate Output</span>
+                                                <div class="button-grid">
+                                                    <button 
+                                                        onClick={() => setLogicOutput(0)} 
+                                                        class={logicOutput() === 0 ? "ratio-btn active" : "ratio-btn"}
+                                                    >
+                                                        Output Y = 0
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => setLogicOutput(1)} 
+                                                        class={logicOutput() === 1 ? "ratio-btn active" : "ratio-btn"}
+                                                    >
+                                                        Output Y = 1
+                                                    </button>
                                                 </div>
-                                            </>
-                                        )}
-                                    </>
-                                )}
-
-                                {activePuzzle.type === "logic" && (
-                                    <>
-                                        <p className="problem-description">{activePuzzle.problem}</p>
-                                        <div className="input-group">
-                                            <span className="input-label">Select Gate Output</span>
-                                            <div className="button-grid">
-                                                <button 
-                                                    onClick={() => setLogicOutput(0)} 
-                                                    className={logicOutput === 0 ? "ratio-btn active" : "ratio-btn"}
-                                                >
-                                                    Output Y = 0
-                                                </button>
-                                                <button 
-                                                    onClick={() => setLogicOutput(1)} 
-                                                    className={logicOutput === 1 ? "ratio-btn active" : "ratio-btn"}
-                                                >
-                                                    Output Y = 1
-                                                </button>
                                             </div>
-                                        </div>
-                                    </>
-                                )}
-                            </div>
+                                        </Show>
+                                    </div>
 
-                            <div className="puzzle-actions">
-                                <button onClick={handleSubmitAnswer} className="glow-button font-orbitron">SUBMIT ANSWER</button>
-                                <button onClick={handleAbandonVault} className="exit-button font-orbitron">ABANDON VAULT</button>
-                            </div>
-                            
-                            <div className={`feedback-msg font-rajdhani ${puzzleFeedbackType === 'success' ? 'feedback-success' : 'feedback-error'}`}>
-                                {puzzleFeedback}
+                                    <div class="puzzle-actions">
+                                        <button onClick={handleSubmitAnswer} class="glow-button font-orbitron">SUBMIT ANSWER</button>
+                                        <button onClick={handleAbandonVault} class="exit-button font-orbitron">ABANDON VAULT</button>
+                                    </div>
+                                    
+                                    <div class={`feedback-msg font-rajdhani ${puzzleFeedbackType() === 'success' ? 'feedback-success' : 'feedback-error'}`}>
+                                        {puzzleFeedback()}
+                                    </div>
+                                </div>
+
+                                {/* Visualizer Canvas */}
+                                <div class="puzzle-visualizer">
+                                    <div class="visualizer-header font-orbitron">HOLOGRAPHIC DIAGRAM SYSTEM</div>
+                                    <div class="canvas-wrapper">
+                                        <canvas ref={puzzleCanvasRef} id="puzzle-canvas"></canvas>
+                                    </div>
+                                    <div class="visualizer-footer font-rajdhani">
+                                        Drag to rotate model. Look for coordinates and dimensions.
+                                    </div>
+                                </div>
+
                             </div>
                         </div>
-
-                        {/* Visualizer Canvas */}
-                        <div className="puzzle-visualizer">
-                            <div className="visualizer-header font-orbitron">HOLOGRAPHIC DIAGRAM SYSTEM</div>
-                            <div className="canvas-wrapper">
-                                <canvas ref={puzzleCanvasRef} id="puzzle-canvas"></canvas>
-                            </div>
-                            <div className="visualizer-footer font-rajdhani">
-                                Drag to rotate model. Look for coordinates and dimensions.
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-            )}
+                    );
+                })()}
+            </Show>
             
             {/* Loading Screen Overlay */}
-            {loadingProgress !== null && (
-                <div id="loading-screen" className="overlay-screen active">
-                    <div className="glass-container loading-box">
-                        <div className="loading-dots-bg"></div>
-                        <h1 className="loading-title font-orbitron">INITIALIZING SYSTEMS</h1>
-                        <p className="loading-subtitle font-orbitron">LOADING LEVEL {level}</p>
+            <Show when={loadingProgress() !== null}>
+                <div id="loading-screen" class="overlay-screen active">
+                    <div class="glass-container loading-box">
+                        <div class="loading-dots-bg"></div>
+                        <h1 class="loading-title font-orbitron">INITIALIZING SYSTEMS</h1>
+                        <p class="loading-subtitle font-orbitron">LOADING LEVEL {level()}</p>
                         
-                        <div className="progress-container">
-                            <div className="progress-bar-glow"></div>
-                            <div className="progress-bar-fill" style={{ width: `${loadingProgress}%` }}></div>
+                        <div class="progress-container">
+                            <div class="progress-bar-glow"></div>
+                            <div class="progress-bar-fill" style={{ width: `${loadingProgress()}%` }}></div>
                         </div>
                         
-                        <div className="progress-text font-rajdhani">
-                            {loadingProgress}% OF ASSETS SECURED
+                        <div class="progress-text font-rajdhani">
+                            {loadingProgress()}% OF ASSETS SECURED
                         </div>
                         
-                        <div className="loading-tip font-rajdhani">
-                            <span className="tip-prefix font-orbitron">TIP:</span> Decrypt vaults to get anti-gravity orbs and escape keys.
+                        <div class="loading-tip font-rajdhani">
+                            <span class="tip-prefix font-orbitron">TIP:</span> Decrypt vaults to get anti-gravity orbs and escape keys.
                         </div>
                     </div>
                 </div>
-            )}
+            </Show>
         </div>
     );
 }
