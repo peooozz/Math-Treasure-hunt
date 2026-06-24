@@ -10,7 +10,7 @@ import Player from './player';
 import Enemies from './enemies';
 import Vaults from './vaults';
 import { Sound } from './sound';
-import { LEVELS } from './levels';
+import { LEVELS, getAssetUrl } from './levels';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 function getComponentBoundingBoxes(geometry) {
@@ -132,6 +132,50 @@ const GameEngine = (() => {
     let buildingFootprints = [];
     let handleVisibilityRef = null;
     
+    function getGroundHeightForPlayer(x, z) {
+        const model = scene ? scene.getObjectByName("environment_model") : null;
+        if (!model) return 0;
+        
+        const raycaster = new THREE.Raycaster();
+        const downVector = new THREE.Vector3(0, -1, 0);
+        const origin = new THREE.Vector3(x, 200, z);
+        raycaster.set(origin, downVector);
+        raycaster.far = 250;
+        
+        const intersects = raycaster.intersectObject(model, true);
+        if (intersects.length > 0) {
+            const lvl = LEVELS[currentLevelIndex - 1];
+            const maxH = (lvl && lvl.theme === 'arabic_city') ? 11.0 : 5.0;
+            const minH = (lvl && lvl.theme === 'arabic_city') ? 2.0 : -2.0;
+            
+            let lowestY = Infinity;
+            for (let i = 0; i < intersects.length; i++) {
+                const yVal = intersects[i].point.y;
+                if (yVal > minH && yVal < maxH) {
+                    if (yVal < lowestY) {
+                        lowestY = yVal;
+                    }
+                }
+            }
+            if (lowestY !== Infinity) {
+                return lowestY;
+            }
+            
+            let closestY = intersects[0].point.y;
+            let minDist = Math.abs(closestY);
+            for (let i = 1; i < intersects.length; i++) {
+                const yVal = intersects[i].point.y;
+                const dist = Math.abs(yVal);
+                if (dist < minDist) {
+                    minDist = dist;
+                    closestY = yVal;
+                }
+            }
+            return closestY;
+        }
+        return 0;
+    }
+    
     const modelCache = new Map();
     const loadingManager = new THREE.LoadingManager();
     
@@ -186,7 +230,7 @@ const GameEngine = (() => {
         const handsPath = "/fps_arms_throwing.glb";
         if (!modelCache.has(handsPath)) {
             const loader = new GLTFLoader(loadingManager);
-            loader.load(handsPath, (gltf) => {
+            loader.load(getAssetUrl(handsPath), (gltf) => {
                 modelCache.set(handsPath, gltf);
             }, undefined, (err) => {
                 console.error("Failed to preload hands GLB:", err);
@@ -855,8 +899,17 @@ const GameEngine = (() => {
                 // Reset player position once the model is loaded to align with custom environment height
                 const spawnX = -halfW + lvl.spawn.x * 4 + 2;
                 const spawnZ = -halfD + lvl.spawn.z * 4 + 2;
-                const spawnY = 3.0;
+                const groundHeight = getGroundHeightForPlayer(spawnX, spawnZ);
+                const spawnY = groundHeight + 3.0;
                 Player.reset(new THREE.Vector3(spawnX, spawnY, spawnZ));
+
+                // Initialize Vaults and Enemies ONLY after model is fully loaded!
+                Vaults.init(scene, lvl.vaults, currentLevelIndex);
+                if (lvl.enemies) {
+                    lvl.enemies.forEach((enemy, index) => {
+                        Enemies.spawnInsect(enemy.x, 0, enemy.z, enemy.name, index, enemy.hp);
+                    });
+                }
             };
 
             if (modelCache.has(lvl.modelPath)) {
@@ -866,7 +919,7 @@ const GameEngine = (() => {
                 handleGltfLoaded(modelCache.get(lvl.modelPath));
             } else {
                 const loader = new GLTFLoader(loadingManager);
-                loader.load(lvl.modelPath, (gltf) => {
+                loader.load(getAssetUrl(lvl.modelPath), (gltf) => {
                     modelCache.set(lvl.modelPath, gltf);
                     handleGltfLoaded(gltf);
                 }, undefined, (err) => {
@@ -874,12 +927,22 @@ const GameEngine = (() => {
                     if (uiCallbacks && uiCallbacks.onLoadProgress) {
                         uiCallbacks.onLoadProgress(100);
                     }
+                    // Fallback to spawning player and vaults immediately
+                    const spawnX = -halfW + lvl.spawn.x * 4 + 2;
+                    const spawnZ = -halfD + lvl.spawn.z * 4 + 2;
+                    Player.reset(new THREE.Vector3(spawnX, 3.0, spawnZ));
+                    Vaults.init(scene, lvl.vaults, currentLevelIndex);
+                    if (lvl.enemies) {
+                        lvl.enemies.forEach((enemy, index) => {
+                            Enemies.spawnInsect(enemy.x, 0, enemy.z, enemy.name, index, enemy.hp);
+                        });
+                    }
                 });
             }
         }
 
         // 7. Spawn insect guards
-        if (lvl && lvl.enemies) {
+        if (!lvl.modelPath && lvl && lvl.enemies) {
             lvl.enemies.forEach((enemy, index) => {
                 Enemies.spawnInsect(enemy.x, 0, enemy.z, enemy.name, index, enemy.hp);
             });
@@ -1333,14 +1396,20 @@ const GameEngine = (() => {
         const halfW = (gridCols * 4) / 2;
         const halfD = (gridRows * 4) / 2;
 
-        Vaults.init(scene, lvl.vaults, currentLevelIndex);
-        
-        // Reset player to current level spawn coordinates
-        const spawnX = -halfW + lvl.spawn.x * 4 + 2;
-        const spawnZ = -halfD + lvl.spawn.z * 4 + 2;
-        const spawnPos = new THREE.Vector3(spawnX, 3, spawnZ);
-
-        Player.reset(spawnPos, currentLevelIndex);
+        if (!lvl.modelPath) {
+            Vaults.init(scene, lvl.vaults, currentLevelIndex);
+            
+            // Reset player to current level spawn coordinates
+            const spawnX = -halfW + lvl.spawn.x * 4 + 2;
+            const spawnZ = -halfD + lvl.spawn.z * 4 + 2;
+            const spawnPos = new THREE.Vector3(spawnX, 3, spawnZ);
+            Player.reset(spawnPos, currentLevelIndex);
+        } else {
+            // Player reset, vaults and enemies spawn will be deferred until GLTF loads
+            const spawnX = -halfW + lvl.spawn.x * 4 + 2;
+            const spawnZ = -halfD + lvl.spawn.z * 4 + 2;
+            Player.reset(new THREE.Vector3(spawnX, 3.0, spawnZ), currentLevelIndex);
+        }
     }
 
     function getMinimapData() {

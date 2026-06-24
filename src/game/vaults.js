@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import TWEEN from '@tweenjs/tween.js';
 import Particles from './particles';
 import { Sound } from './sound';
-import { LEVELS } from './levels';
+import { LEVELS, getAssetUrl } from './levels';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js';
 
@@ -52,7 +52,7 @@ const Vaults = (() => {
         if (chestModel || isChestModelLoading) return;
         isChestModelLoading = true;
         const loader = new GLTFLoader();
-        loader.load('/treasure_chest.glb', (gltf) => {
+        loader.load(getAssetUrl('/treasure_chest.glb'), (gltf) => {
             chestModel = gltf;
             isChestModelLoading = false;
             // Swap placeholders for GLB model on loaded vaults
@@ -171,6 +171,23 @@ const Vaults = (() => {
         
         const intersects = raycaster.intersectObject(cachedEnvironmentModel, true);
         if (intersects.length > 0) {
+            const lvl = LEVELS[currentLevelIdx - 1] || LEVELS[0];
+            const maxH = (lvl && lvl.theme === 'arabic_city') ? 11.0 : 5.0;
+            const minH = (lvl && lvl.theme === 'arabic_city') ? 2.0 : -2.0;
+            
+            let lowestY = Infinity;
+            for (let i = 0; i < intersects.length; i++) {
+                const yVal = intersects[i].point.y;
+                if (yVal > minH && yVal < maxH) {
+                    if (yVal < lowestY) {
+                        lowestY = yVal;
+                    }
+                }
+            }
+            if (lowestY !== Infinity) {
+                return lowestY;
+            }
+            
             let closestY = intersects[0].point.y;
             let minDist = Math.abs(closestY);
             for (let i = 1; i < intersects.length; i++) {
@@ -204,7 +221,11 @@ const Vaults = (() => {
             const worldX = -halfW + v.gridX * 4 + 2;
             const worldZ = -halfD + v.gridZ * 4 + 2;
             const color = getColorForType(v.type);
-            createVaultMesh(worldX, 0, worldZ, color, v.type.toUpperCase(), v.id);
+            let groundY = 0;
+            if (lvl && lvl.modelPath) {
+                groundY = getGroundHeight(worldX, worldZ);
+            }
+            createVaultMesh(worldX, groundY, worldZ, color, v.type.toUpperCase(), v.id);
         });
     }
 

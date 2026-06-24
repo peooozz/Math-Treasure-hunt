@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import Particles from './particles';
 import { Sound } from './sound';
 import Player from './player';
-import { LEVELS } from './levels';
+import { LEVELS, getAssetUrl } from './levels';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import Physics from './physics';
 
@@ -93,7 +93,7 @@ const Enemies = (() => {
         if (!enemyModelTemplate && !isModelLoading) {
             isModelLoading = true;
             const loader = new GLTFLoader();
-            loader.load('/o.u.r.s_enemy_1.glb', (gltf) => {
+            loader.load(getAssetUrl('/o.u.r.s_enemy_1.glb'), (gltf) => {
                 enemyModelTemplate = gltf.scene;
                 enemyModelTemplate.traverse(child => {
                     if (child.isMesh) {
@@ -182,10 +182,14 @@ const Enemies = (() => {
         let height = 0;
         if (intersects.length > 0) {
             // Skip roofs, balconies, and upper structures (filter for street level)
+            const lvl = LEVELS[currentLevelIndex - 1];
+            const maxH = (lvl && lvl.theme === 'arabic_city') ? 11.0 : 5.0;
+            const minH = (lvl && lvl.theme === 'arabic_city') ? 2.0 : -2.0;
+            
             let lowestY = Infinity;
             for (let i = 0; i < intersects.length; i++) {
                 const yVal = intersects[i].point.y;
-                if (yVal > -2.0 && yVal < 5.0) {
+                if (yVal > minH && yVal < maxH) {
                     if (yVal < lowestY) {
                         lowestY = yVal;
                     }
@@ -298,7 +302,11 @@ const Enemies = (() => {
         }
 
         const group = new THREE.Group();
-        group.position.set(finalX, y + 1.1, finalZ);
+        let spawnY = y;
+        if (lvl && lvl.modelPath) {
+            spawnY = getGroundHeight(finalX, finalZ);
+        }
+        group.position.set(finalX, spawnY + 1.1, finalZ);
         
         // Scale to 1.4x (menacing giant insect!)
         group.scale.set(1.4, 1.4, 1.4);
@@ -568,7 +576,7 @@ const Enemies = (() => {
             type: 'insect',
             mesh: group,
             startX: finalX,
-            startY: y + 1.1,
+            startY: spawnY + 1.1,
             startZ: finalZ,
             dirX: dirX,
             dirZ: dirZ,

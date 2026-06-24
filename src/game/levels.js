@@ -233,3 +233,12 @@ export const LEVELS = [
         ]
     }
 ];
+
+export function getAssetUrl(path) {
+    if (!path) return path;
+    if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+        const cleanPath = path.startsWith('/') ? path : '/' + path;
+        return `https://media.githubusercontent.com/media/peooozz/Math-Treasure-hunt/main/public${cleanPath}`;
+    }
+    return path;
+}
