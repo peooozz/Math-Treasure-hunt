@@ -711,149 +711,90 @@ const GameEngine = (() => {
                             }
                         }
 
-                        if (lvl.theme === "arabic_city" || lvl.theme === "cyberpunk_city" || lvl.theme === "neighbourhood_city") {
-                            // Split combined building meshes using DSU to get separate components
-                            child.updateMatrixWorld(true);
-                            const localBoxes = getComponentBoundingBoxes(child.geometry);
-                            
-                            localBoxes.forEach(lbox => {
-                                const corners = [
-                                    new THREE.Vector3(lbox.min.x, lbox.min.y, lbox.min.z),
-                                    new THREE.Vector3(lbox.max.x, lbox.min.y, lbox.min.z),
-                                    new THREE.Vector3(lbox.min.x, lbox.max.y, lbox.min.z),
-                                    new THREE.Vector3(lbox.max.x, lbox.max.y, lbox.min.z),
-                                    new THREE.Vector3(lbox.min.x, lbox.min.y, lbox.max.z),
-                                    new THREE.Vector3(lbox.max.x, lbox.min.y, lbox.max.z),
-                                    new THREE.Vector3(lbox.min.x, lbox.max.y, lbox.max.z),
-                                    new THREE.Vector3(lbox.max.x, lbox.max.y, lbox.max.z)
-                                ];
-                                
-                                let wMinX = Infinity, wMinY = Infinity, wMinZ = Infinity;
-                                let wMaxX = -Infinity, wMaxY = -Infinity, wMaxZ = -Infinity;
-                                
-                                corners.forEach(c => {
-                                    c.applyMatrix4(child.matrixWorld);
-                                    if (c.x < wMinX) wMinX = c.x;
-                                    if (c.y < wMinY) wMinY = c.y;
-                                    if (c.z < wMinZ) wMinZ = c.z;
-                                    if (c.x > wMaxX) wMaxX = c.x;
-                                    if (c.y > wMaxY) wMaxY = c.y;
-                                    if (c.z > wMaxZ) wMaxZ = c.z;
-                                });
-                                
-                                const meshSize = new THREE.Vector3(wMaxX - wMinX, wMaxY - wMinY, wMaxZ - wMinZ);
-                                const meshCenter = new THREE.Vector3((wMaxX + wMinX)/2, (wMaxY + wMinY)/2, (wMaxZ + wMinZ)/2);
-                                
-                                const minHeight = 0.5;
-                                const minSize = 2.5; // Filter out small items/decorations
-                                const maxLimit = isOpenWorld ? 60 : 35; // Filter out ground/street plates (expanded to 60 for openWorld to preserve large structures)
-                                
-                                if (meshSize.y < minHeight || meshSize.x < minSize || meshSize.z < minSize || meshSize.x > maxLimit || meshSize.z > maxLimit) {
-                                    return;
-                                }
-                                
-                                const body = Physics.createBox(
-                                    meshCenter.x,
-                                    meshCenter.y,
-                                    meshCenter.z,
-                                    meshSize.x * 0.9, // Shrink slightly to keep streets open
-                                    meshSize.y,
-                                    meshSize.z * 0.9,
-                                    0
-                                );
-                                body.collisionFilterGroup = 2;
-                                mazePhysicsBodies.push(body);
-                                
-                                buildingFootprints.push({
-                                    x: meshCenter.x,
-                                    z: meshCenter.z,
-                                    halfW: meshSize.x / 2,
-                                    halfD: meshSize.z / 2
-                                });
-                            });
-                        } else {
-                            // Standard box bounds for other levels
-                            const meshBox = new THREE.Box3().setFromObject(child);
-                            const meshSize = new THREE.Vector3();
-                            meshBox.getSize(meshSize);
-                            const meshCenter = new THREE.Vector3();
-                            meshBox.getCenter(meshCenter);
+                        // Standard box bounds for all levels (extremely fast and optimized)
+                        const meshBox = new THREE.Box3().setFromObject(child);
+                        const meshSize = new THREE.Vector3();
+                        meshBox.getSize(meshSize);
+                        const meshCenter = new THREE.Vector3();
+                        meshBox.getCenter(meshCenter);
 
-                            const maxLimit = isOpenWorld ? 60 : 35;
-                            const minHeight = isOpenWorld ? 0.5 : 0.25;
-                            if (meshSize.y < minHeight || meshSize.x > maxLimit || meshSize.z > maxLimit) {
+                        const maxLimit = isOpenWorld ? 60 : 35;
+                        const minHeight = isOpenWorld ? 0.5 : 0.25;
+                        const minSize = isOpenWorld ? 2.5 : 0.0;
+
+                        if (meshSize.y < minHeight || meshSize.x > maxLimit || meshSize.z > maxLimit || meshSize.x < minSize || meshSize.z < minSize) {
+                            return;
+                        }
+
+                        if (isOpenWorld) {
+                            const spawnX = -halfW + lvl.spawn.x * 4 + 2;
+                            const spawnZ = -halfD + lvl.spawn.z * 4 + 2;
+                            const exitX = -halfW + lvl.exit.x * 4 + 2;
+                            const exitZ = -halfD + lvl.exit.z * 4 + 2;
+                            
+                            const spawnInside = spawnX >= meshBox.min.x - 0.5 && spawnX <= meshBox.max.x + 0.5 &&
+                                                 spawnZ >= meshBox.min.z - 0.5 && spawnZ <= meshBox.max.z + 0.5;
+                            const exitInside = exitX >= meshBox.min.x - 0.5 && exitX <= meshBox.max.x + 0.5 &&
+                                               exitZ >= meshBox.min.z - 0.5 && exitZ <= meshBox.max.z + 0.5;
+                            
+                            if (spawnInside || exitInside) {
                                 return;
                             }
-
-                            if (isOpenWorld) {
-                                const spawnX = -halfW + lvl.spawn.x * 4 + 2;
-                                const spawnZ = -halfD + lvl.spawn.z * 4 + 2;
-                                const exitX = -halfW + lvl.exit.x * 4 + 2;
-                                const exitZ = -halfD + lvl.exit.z * 4 + 2;
-                                
-                                const spawnInside = spawnX >= meshBox.min.x - 0.5 && spawnX <= meshBox.max.x + 0.5 &&
-                                                     spawnZ >= meshBox.min.z - 0.5 && spawnZ <= meshBox.max.z + 0.5;
-                                const exitInside = exitX >= meshBox.min.x - 0.5 && exitX <= meshBox.max.x + 0.5 &&
-                                                   exitZ >= meshBox.min.z - 0.5 && exitZ <= meshBox.max.z + 0.5;
-                                
-                                if (spawnInside || exitInside) {
-                                    return;
-                                }
-                            } else {
-                                const criticalPoints = [
-                                    { x: -halfW + lvl.spawn.x * 4 + 2, z: -halfD + lvl.spawn.z * 4 + 2 },
-                                    { x: -halfW + lvl.exit.x * 4 + 2, z: -halfD + lvl.exit.z * 4 + 2 }
-                                ];
-                                if (lvl.vaults) {
-                                    lvl.vaults.forEach(v => {
-                                        criticalPoints.push({
-                                            x: -halfW + v.gridX * 4 + 2,
-                                            z: -halfD + v.gridZ * 4 + 2
-                                        });
+                        } else {
+                            const criticalPoints = [
+                                { x: -halfW + lvl.spawn.x * 4 + 2, z: -halfD + lvl.spawn.z * 4 + 2 },
+                                { x: -halfW + lvl.exit.x * 4 + 2, z: -halfD + lvl.exit.z * 4 + 2 }
+                            ];
+                            if (lvl.vaults) {
+                                lvl.vaults.forEach(v => {
+                                    criticalPoints.push({
+                                        x: -halfW + v.gridX * 4 + 2,
+                                        z: -halfD + v.gridZ * 4 + 2
                                     });
-                                }
-                                if (lvl.enemies) {
-                                    lvl.enemies.forEach(e => {
-                                        criticalPoints.push({ x: e.x, z: e.z });
-                                    });
-                                }
-                                let intersectsCritical = false;
-                                for (const pt of criticalPoints) {
-                                    if (
-                                        pt.x >= meshBox.min.x - 1.5 && 
-                                        pt.x <= meshBox.max.x + 1.5 &&
-                                        pt.z >= meshBox.min.z - 1.5 && 
-                                        pt.z <= meshBox.max.z + 1.5
-                                    ) {
-                                        intersectsCritical = true;
-                                        break;
-                                    }
-                                }
-                                if (intersectsCritical) {
-                                    return;
-                                }
-                            }
-
-                            const body = Physics.createBox(
-                                meshCenter.x,
-                                meshCenter.y,
-                                meshCenter.z,
-                                meshSize.x,
-                                meshSize.y,
-                                meshSize.z,
-                                0
-                            );
-                            body.collisionFilterGroup = 2;
-                            mazePhysicsBodies.push(body);
-
-                            if (isOpenWorld) {
-                                buildingFootprints.push({
-                                    x: meshCenter.x,
-                                    z: meshCenter.z,
-                                    halfW: meshSize.x / 2,
-                                    halfD: meshSize.z / 2
                                 });
                             }
+                            if (lvl.enemies) {
+                                lvl.enemies.forEach(e => {
+                                    criticalPoints.push({ x: e.x, z: e.z });
+                                });
+                            }
+                            let intersectsCritical = false;
+                            for (const pt of criticalPoints) {
+                                if (
+                                    pt.x >= meshBox.min.x - 1.5 && 
+                                    pt.x <= meshBox.max.x + 1.5 &&
+                                    pt.z >= meshBox.min.z - 1.5 && 
+                                    pt.z <= meshBox.max.z + 1.5
+                                ) {
+                                    intersectsCritical = true;
+                                    break;
+                                }
+                            }
+                            if (intersectsCritical) {
+                                return;
+                            }
+                        }
+
+                        const sizeScale = isOpenWorld ? 0.9 : 1.0;
+                        const body = Physics.createBox(
+                            meshCenter.x,
+                            meshCenter.y,
+                            meshCenter.z,
+                            meshSize.x * sizeScale,
+                            meshSize.y,
+                            meshSize.z * sizeScale,
+                            0
+                        );
+                        body.collisionFilterGroup = 2;
+                        mazePhysicsBodies.push(body);
+
+                        if (isOpenWorld) {
+                            buildingFootprints.push({
+                                x: meshCenter.x,
+                                z: meshCenter.z,
+                                halfW: meshSize.x / 2,
+                                halfD: meshSize.z / 2
+                            });
                         }
                     }
                 });

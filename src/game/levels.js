@@ -41,6 +41,7 @@ export const LEVELS = [
             {
                 id: 0,
                 name: "Farmer's Field",
+                concept: "Ascending Order",
                 gridX: 4,
                 gridZ: 3,
                 type: "algebra",
@@ -55,6 +56,7 @@ export const LEVELS = [
             {
                 id: 1,
                 name: "Rooftop Projectile",
+                concept: "Descending Order",
                 gridX: 11,
                 gridZ: 3,
                 type: "algebra",
@@ -69,6 +71,7 @@ export const LEVELS = [
             {
                 id: 2,
                 name: "Linear Trajectory",
+                concept: "Comparing Numbers",
                 gridX: 2,
                 gridZ: 11,
                 type: "algebra",
@@ -121,6 +124,7 @@ export const LEVELS = [
             {
                 id: 0,
                 name: "Ground Roots",
+                concept: "Quadratic Equations",
                 gridX: 3,
                 gridZ: 1,
                 type: "quadratics",
@@ -132,6 +136,7 @@ export const LEVELS = [
             {
                 id: 1,
                 name: "Storage Core",
+                concept: "Coordinate Geometry",
                 gridX: 11,
                 gridZ: 1,
                 type: "geometry",
@@ -144,6 +149,7 @@ export const LEVELS = [
             {
                 id: 2,
                 name: "Wall Support",
+                concept: "Trigonometry",
                 gridX: 7,
                 gridZ: 9,
                 type: "trig",
@@ -193,6 +199,7 @@ export const LEVELS = [
             {
                 id: 0,
                 name: "Reactor Shell",
+                concept: "Surface Area & Volume",
                 gridX: 3,
                 gridZ: 2,
                 type: "geometry",
@@ -205,6 +212,7 @@ export const LEVELS = [
             {
                 id: 1,
                 name: "Logic Circuit OR",
+                concept: "Probability",
                 gridX: 11,
                 gridZ: 2,
                 type: "algebra",
@@ -219,6 +227,7 @@ export const LEVELS = [
             {
                 id: 2,
                 name: "Rooftop Projectile",
+                concept: "Polynomials",
                 gridX: 7,
                 gridZ: 12,
                 type: "algebra",

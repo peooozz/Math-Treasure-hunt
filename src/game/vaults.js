@@ -205,9 +205,9 @@ const Vaults = (() => {
 
     function init(scene, levelVaults = [], levelIndex = 1) {
         sceneRef = scene;
+        clearAll();
         currentLevelVaults = levelVaults;
         currentLevelIdx = levelIndex;
-        activeVaults.length = 0;
         
         loadChestModel();
         
@@ -225,7 +225,8 @@ const Vaults = (() => {
             if (lvl && lvl.modelPath) {
                 groundY = getGroundHeight(worldX, worldZ);
             }
-            createVaultMesh(worldX, groundY, worldZ, color, v.type.toUpperCase(), v.id);
+            const labelText = v.concept ? v.concept : v.type.toUpperCase();
+            createVaultMesh(worldX, groundY, worldZ, color, labelText, v.id);
         });
     }
 

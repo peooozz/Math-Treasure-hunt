@@ -1798,3 +1798,361 @@ body, html, #root, .App {
     cursor: none !important;
 }
 
+/* Comic Popup Styles */
+.comic-popup {
+    background: #fef08a !important; /* Bright comic yellow */
+    border: 6px solid #000000 !important;
+    border-radius: 24px !important;
+    box-shadow: 12px 12px 0px #000000 !important;
+    font-family: 'Rajdhani', 'Comic Sans MS', sans-serif;
+    color: #000000 !important;
+    padding: 24px !important;
+    position: relative;
+    overflow: visible !important;
+    max-width: 850px !important;
+    width: 90% !important;
+    height: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 20px;
+}
+
+.comic-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 4px solid #000000;
+    padding-bottom: 12px;
+}
+
+.comic-vault-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.8rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    color: #000;
+    margin: 0;
+    -webkit-text-fill-color: initial !important;
+    background: none !important;
+    text-shadow: none !important;
+}
+
+.comic-control-btns {
+    display: flex;
+    gap: 10px;
+}
+
+.comic-btn {
+    border: 3px solid #000000;
+    border-radius: 10px;
+    padding: 8px 16px;
+    font-weight: bold;
+    font-family: 'Orbitron', sans-serif;
+    cursor: pointer;
+    box-shadow: 4px 4px 0px #000000;
+    transition: transform 0.1s, box-shadow 0.1s;
+}
+.comic-btn:active {
+    transform: translate(2px, 2px);
+    box-shadow: 2px 2px 0px #000000;
+}
+.comic-btn-resume {
+    background: #4ade80; /* Green */
+    color: #000;
+}
+.comic-btn-home {
+    background: #ef4444; /* Red */
+    color: #fff;
+}
+.comic-btn-check {
+    background: #3b82f6; /* Blue */
+    color: #fff;
+    font-size: 1.25rem;
+    padding: 12px 24px;
+    margin-top: 15px;
+    align-self: center;
+}
+
+.comic-mascot-row {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background: #ffffff;
+    border: 3px solid #000000;
+    border-radius: 15px;
+    padding: 12px;
+    position: relative;
+    box-shadow: 4px 4px 0px #000000;
+}
+.comic-mascot {
+    font-size: 2.5rem;
+    animation: wiggle 1s infinite alternate;
+}
+.comic-speech-bubble-inside {
+    flex-grow: 1;
+}
+.comic-bubble {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #000;
+    margin: 0;
+    text-align: left;
+}
+
+.comic-stars {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin: 10px 0;
+}
+.comic-star {
+    font-size: 2.2rem;
+    filter: grayscale(1);
+    transition: transform 0.3s;
+}
+.comic-star.active {
+    filter: none;
+    animation: pop-star 0.5s ease-out;
+}
+
+.comic-game-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 25px;
+    padding: 20px 0;
+}
+
+/* Slots for sorting */
+.comic-slots-container {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    min-height: 80px;
+    width: 100%;
+}
+.comic-slot {
+    width: 80px;
+    height: 80px;
+    border: 3px dashed #000000;
+    border-radius: 12px;
+    background: rgba(0,0,0,0.05);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    transition: background 0.2s;
+    cursor: pointer;
+}
+.comic-slot.dragover {
+    background: rgba(0,0,0,0.15);
+}
+.comic-slot-hint {
+    position: absolute;
+    bottom: -22px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    color: #666;
+}
+
+/* Draggable item cards */
+.comic-card {
+    width: 70px;
+    height: 70px;
+    border: 3px solid #000000;
+    border-radius: 12px;
+    background: #60a5fa; /* Blue */
+    color: #ffffff;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.6rem;
+    font-weight: 900;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: grab;
+    box-shadow: 4px 4px 0px #000000;
+    transition: transform 0.15s, box-shadow 0.15s;
+    user-select: none;
+}
+.comic-card:active {
+    cursor: grabbing;
+}
+.comic-card.selected {
+    transform: scale(1.1) rotate(3deg);
+    border-color: #ef4444;
+    box-shadow: 6px 6px 0px #000000;
+}
+.comic-card-pool {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    min-height: 80px;
+    width: 100%;
+    padding: 10px;
+    background: rgba(255,255,255,0.4);
+    border: 3px solid #000;
+    border-radius: 15px;
+    box-shadow: inset 2px 2px 5px rgba(0,0,0,0.1);
+}
+
+.comic-equation-row {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #000;
+}
+
+/* Wiggle animation */
+@keyframes wiggle {
+    0% { transform: rotate(-5deg); }
+    100% { transform: rotate(5deg); }
+}
+
+@keyframes pop-star {
+    0% { transform: scale(0.5); }
+    50% { transform: scale(1.4); }
+    100% { transform: scale(1); }
+}
+
+/* Custom Playful CSS Enhancements */
+.comic-card {
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.2s !important;
+}
+
+.comic-card:hover {
+    transform: scale(1.15) rotate(4deg) !important;
+    box-shadow: 6px 6px 0px #000000 !important;
+}
+
+.comic-card:active {
+    transform: scale(0.95) rotate(-2deg) !important;
+    box-shadow: 2px 2px 0px #000000 !important;
+}
+
+.comic-concept-header {
+    background: #ff7f50 !important;
+    border: 3px solid #000 !important;
+    border-radius: 12px !important;
+    padding: 6px 16px !important;
+    display: inline-block !important;
+    color: #ffffff !important;
+    text-shadow: 2px 2px 0px #000000 !important;
+    box-shadow: 4px 4px 0px #000000 !important;
+    margin: 0 auto 10px auto !important;
+}
+
+.comic-star.active {
+    animation: pop-star 0.5s ease-out, star-wiggle 1.5s infinite alternate ease-in-out !important;
+}
+
+@keyframes star-wiggle {
+    0% { transform: scale(1) rotate(-8deg); }
+    100% { transform: scale(1.1) rotate(8deg); }
+}
+
+/* Entry animations for the comic popup */
+@keyframes comicBounceIn {
+    0% {
+        transform: scale(0.3);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.08);
+        opacity: 0.8;
+    }
+    70% {
+        transform: scale(0.92);
+        opacity: 0.95;
+    }
+    100% {
+        transform: scale(1.0);
+        opacity: 1;
+    }
+}
+.comic-popup {
+    animation: comicBounceIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+}
+
+/* cyber style neon glows for level 2 & 3 math window */
+@keyframes cyberGlowPulse {
+    0% {
+        border-color: rgba(0, 240, 255, 0.35);
+        box-shadow: 0 0 25px rgba(0, 240, 255, 0.15), inset 0 0 15px rgba(0, 240, 255, 0.05);
+    }
+    50% {
+        border-color: rgba(189, 0, 255, 0.65);
+        box-shadow: 0 0 45px rgba(189, 0, 255, 0.35), inset 0 0 25px rgba(189, 0, 255, 0.15);
+    }
+    100% {
+        border-color: rgba(0, 240, 255, 0.35);
+        box-shadow: 0 0 25px rgba(0, 240, 255, 0.15), inset 0 0 15px rgba(0, 240, 255, 0.05);
+    }
+}
+
+@keyframes cyberSlideIn {
+    0% {
+        transform: scale(0.8) translateY(50px);
+        opacity: 0;
+    }
+    100% {
+        transform: scale(1.0) translateY(0);
+        opacity: 1;
+    }
+}
+
+.puzzle-container {
+    border: 2px solid rgba(0, 240, 255, 0.35);
+    animation: cyberSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) both, cyberGlowPulse 4s infinite ease-in-out;
+}
+
+/* Enhance level 2 & 3 controls style to be neon and dynamic */
+.cyber-slider {
+    cursor: pointer;
+}
+.ratio-btn {
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), background 0.3s, border-color 0.3s, box-shadow 0.3s !important;
+}
+.ratio-btn:hover {
+    border-color: var(--color-primary) !important;
+    background: rgba(0, 240, 255, 0.15) !important;
+    transform: scale(1.05);
+}
+.ratio-btn:active {
+    transform: scale(0.96);
+}
+.ratio-btn.active {
+    border-color: var(--color-secondary) !important;
+    background: linear-gradient(135deg, rgba(189, 0, 255, 0.3) 0%, rgba(0, 240, 255, 0.3) 100%) !important;
+    box-shadow: 0 0 15px rgba(189, 0, 255, 0.6), inset 0 0 10px rgba(189, 0, 255, 0.2) !important;
+    transform: scale(1.02);
+}
+
+.dial-btn {
+    background: rgba(0, 240, 255, 0.1) !important;
+    border: 1px solid var(--color-primary) !important;
+    border-radius: 6px !important;
+    color: var(--color-primary) !important;
+    transition: all 0.2s ease !important;
+    padding: 2px 15px !important;
+    box-shadow: 0 0 5px rgba(0, 240, 255, 0.2);
+}
+.dial-btn:hover {
+    background: var(--color-primary) !important;
+    color: #000 !important;
+    box-shadow: var(--glow-cyan) !important;
+    transform: scale(1.1) !important;
+}
+.dial-btn:active {
+    transform: scale(0.95) !important;
+}
+
+/* General overlay screen transitions */
+.overlay-screen {
+    transition: opacity 0.3s ease;
+}
+
+
+

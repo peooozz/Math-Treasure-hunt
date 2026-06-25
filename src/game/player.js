@@ -22,6 +22,7 @@ const Player = (() => {
     const jumpVelocity = 7.0;
     let canJump = false;
     let walkTime = 0;
+    let jumpTime = 0;
     
     // Hover Mouse Look State
     let isHovering = false;
@@ -105,21 +106,7 @@ const Player = (() => {
         body.collisionFilterMask = -1;
         body.updateMassProperties();
         
-        // Floor contact detections
-        body.addEventListener("collide", (e) => {
-            const contactNormal = new CANNON.Vec3();
-            if (e.contact.bi.id === body.id) {
-                e.contact.ni.negate(contactNormal);
-            } else {
-                contactNormal.copy(e.contact.ni);
-            }
-            
-            if (!isGravityInverted && contactNormal.y > 0.5) {
-                canJump = true;
-            } else if (isGravityInverted && contactNormal.y < -0.5) {
-                canJump = true;
-            }
-        });
+        // Floor contact detections are handled dynamically in the update loop
         
         // 2. Setup Pointer Lock Controls
         controls = new PointerLockControls(cameraRef, document.body);
@@ -288,6 +275,7 @@ const Player = (() => {
                         body.velocity.y = jumpVelocity;
                     }
                     canJump = false;
+                    jumpTime = performance.now();
                     Sound.playJump();
                 }
                 break;
@@ -502,6 +490,43 @@ const Player = (() => {
     }
     
     function update(deltaTime) {
+        // Dynamic ground contact detection using Cannon.js active contacts
+        let touchingGround = false;
+        const world = Physics.getWorld();
+        if (world && body) {
+            for (let i = 0; i < world.contacts.length; i++) {
+                const c = world.contacts[i];
+                if (c.bi.id === body.id || c.bj.id === body.id) {
+                    const normal = new CANNON.Vec3();
+                    if (c.bi.id === body.id) {
+                        c.ni.negate(normal);
+                    } else {
+                        normal.copy(c.ni);
+                    }
+                    if (!isGravityInverted && normal.y > 0.5) {
+                        touchingGround = true;
+                        break;
+                    } else if (isGravityInverted && normal.y < -0.5) {
+                        touchingGround = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        const nowTime = performance.now();
+        const justJumped = (nowTime - jumpTime) < 250;
+        canJump = touchingGround && !justJumped;
+
+        if (canJump) {
+            // Cancel vertical velocity spikes/bouncing when walking to keep movement perfectly smooth
+            if (!isGravityInverted && body.velocity.y > 0.0) {
+                body.velocity.y = 0;
+            } else if (isGravityInverted && body.velocity.y < 0.0) {
+                body.velocity.y = 0;
+            }
+        }
+
         if (isGravityInverted) {
             antiGravDuration -= deltaTime;
             if (antiGravDuration <= 0) {

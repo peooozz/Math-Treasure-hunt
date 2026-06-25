@@ -7,6 +7,7 @@ const Physics = (() => {
     let world;
     const bodies = [];
     const gravityForce = 9.82;
+    let slipperyMaterial;
 
     function init() {
         world = new CANNON.World();
@@ -15,13 +16,13 @@ const Physics = (() => {
         world.solver.iterations = 8; // Slight optimization
         world.solver.tolerance = 0.15;
 
-        const physicsMaterial = new CANNON.Material("slipperyMaterial");
+        slipperyMaterial = new CANNON.Material("slipperyMaterial");
         const physicsContactMaterial = new CANNON.ContactMaterial(
-            physicsMaterial,
-            physicsMaterial,
+            slipperyMaterial,
+            slipperyMaterial,
             {
-                friction: 0.12,
-                restitution: 0.15
+                friction: 0.05,
+                restitution: 0.0
             }
         );
         world.addContactMaterial(physicsContactMaterial);
@@ -39,7 +40,7 @@ const Physics = (() => {
         const shape = new CANNON.Box(new CANNON.Vec3(width / 2, height / 2, depth / 2));
         const body = new CANNON.Body({
             mass: mass,
-            material: material || new CANNON.Material()
+            material: material || slipperyMaterial
         });
         body.addShape(shape);
         body.position.set(x, y, z);
@@ -52,7 +53,7 @@ const Physics = (() => {
         const shape = new CANNON.Sphere(radius);
         const body = new CANNON.Body({
             mass: mass,
-            material: material || new CANNON.Material()
+            material: material || slipperyMaterial
         });
         body.addShape(shape);
         body.position.set(x, y, z);
@@ -64,7 +65,8 @@ const Physics = (() => {
     function createGround(x, y, z, orientation = new CANNON.Quaternion()) {
         const groundShape = new CANNON.Plane();
         const groundBody = new CANNON.Body({
-            mass: 0
+            mass: 0,
+            material: slipperyMaterial
         });
         groundBody.addShape(groundShape);
         groundBody.quaternion.copy(orientation);

@@ -41,6 +41,101 @@ const LEVEL_CARDS_DATA = [
     }
 ];
 
+const LEVEL1_PUZZLES_DATA = {
+    // Treasure 1 (Vault ID 0): Ascending sort
+    0: [
+        {
+            type: "sort",
+            numbers: [12, 5, 23, 9],
+            correct: [5, 9, 12, 23],
+            instruction: "Arrange the numbers in ASCENDING order (from smallest to biggest! 📈)"
+        },
+        {
+            type: "sort",
+            numbers: [45, 17, 8, 31],
+            correct: [8, 17, 31, 45],
+            instruction: "Super! Now arrange these from smallest to biggest! 📈"
+        },
+        {
+            type: "sort",
+            numbers: [99, 14, 52, 67],
+            correct: [14, 52, 67, 99],
+            instruction: "Last one! Sort these numbers in ascending order! 📈"
+        }
+    ],
+    // Treasure 2 (Vault ID 1): Descending sort
+    1: [
+        {
+            type: "sort",
+            numbers: [15, 3, 42, 28],
+            correct: [42, 28, 15, 3],
+            instruction: "Arrange the numbers in DESCENDING order (from biggest to smallest! 📉)"
+        },
+        {
+            type: "sort",
+            numbers: [60, 88, 12, 54],
+            correct: [88, 60, 54, 12],
+            instruction: "Awesome! Arrange these from biggest to smallest! 📉"
+        },
+        {
+            type: "sort",
+            numbers: [5, 91, 33, 72],
+            correct: [91, 72, 33, 5],
+            instruction: "Great job! One more time: sort from biggest to smallest! 📉"
+        }
+    ],
+    // Treasure 3 (Vault ID 2): Comparing Numbers (5 questions)
+    2: [
+        {
+            type: "equation",
+            template: ["12", "SLOT", "18"],
+            options: ["<", ">", "="],
+            correct: "<",
+            instruction: "Which symbol fits? Is 12 smaller than, larger than, or equal to 18? 🤔"
+        },
+        {
+            type: "equation",
+            template: ["45", "SLOT", "21"],
+            options: ["<", ">", "="],
+            correct: ">",
+            instruction: "Compare these numbers! Is 45 smaller than, larger than, or equal to 21? 🤔"
+        },
+        {
+            type: "equation",
+            template: ["30", "SLOT", "30"],
+            options: ["<", ">", "="],
+            correct: "=",
+            instruction: "Look closely! Is 30 smaller than, larger than, or equal to 30? 🤔"
+        },
+        {
+            type: "equation",
+            template: ["8", "SLOT", "88"],
+            options: ["<", ">", "="],
+            correct: "<",
+            instruction: "Comparing numbers! Is 8 smaller than, larger than, or equal to 88? 🤔"
+        },
+        {
+            type: "equation",
+            template: ["97", "SLOT", "79"],
+            options: ["<", ">", "="],
+            correct: ">",
+            instruction: "Final comparison! Is 97 smaller than, larger than, or equal to 79? 🤔"
+        }
+    ]
+};
+
+const PLAYFUL_COLORS = ['#ff4757', '#2ed573', '#1e90ff', '#ffa502', '#ff6b81', '#70a1ff', '#7bed9f'];
+
+const getColorForItem = (item) => {
+    const str = String(item);
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const idx = Math.abs(hash) % PLAYFUL_COLORS.length;
+    return PLAYFUL_COLORS[idx];
+};
+
 function App() {
     let canvasRef;
     let puzzleCanvasRef;
@@ -65,6 +160,13 @@ function App() {
     const [isHovered, setIsHovered] = createSignal(false);
     const [isLocked, setIsLocked] = createSignal(false);
     const [mousePos, setMousePos] = createSignal({ x: 0, y: 0 });
+
+    // Level 1 Comic Puzzle signals
+    const [lvl1QuestionIdx, setLvl1QuestionIdx] = createSignal(0);
+    const [lvl1Items, setLvl1Items] = createSignal([]);
+    const [lvl1Slots, setLvl1Slots] = createSignal([]);
+    const [selectedCard, setSelectedCard] = createSignal(null);
+    const [isDragOver, setIsDragOver] = createSignal(false);
 
     const handlePrevLevel = () => {
         setActiveLevelIndex((prev) => (prev > 0 ? prev - 1 : LEVEL_CARDS_DATA.length - 1));
@@ -149,6 +251,15 @@ function App() {
                 setLogicOutput(null);
                 setPuzzleFeedback("");
                 setPuzzleFeedbackType("");
+                
+                if (GameEngine.getControls()) {
+                    GameEngine.getControls().unlock();
+                }
+
+                if (level() === 1) {
+                    setLvl1QuestionIdx(0);
+                    initLevel1Puzzle(vault.id, 0);
+                }
             },
             onGameOver: () => setGameOver(true),
             onVictory: () => setVictory(true),
@@ -568,6 +679,203 @@ function App() {
         }, 100);
     };
 
+    // Level 1 Comic Puzzle Helpers
+    const initLevel1Puzzle = (vaultId, questionIdx) => {
+        const data = LEVEL1_PUZZLES_DATA[vaultId][questionIdx];
+        if (data.type === "sort") {
+            setLvl1Items([...data.numbers]);
+            setLvl1Slots([null, null, null, null]);
+        } else if (data.type === "equation") {
+            setLvl1Items([...data.options]);
+            setLvl1Slots([null]);
+        }
+        setSelectedCard(null);
+        setPuzzleFeedback("");
+        setPuzzleFeedbackType("");
+    };
+
+    const handleDragStart = (e, item, index, sourceZone) => {
+        e.dataTransfer.setData("text/plain", JSON.stringify({ item, index, sourceZone }));
+        setSelectedCard({ item, index, sourceZone });
+    };
+
+    const handleDropToSlot = (e, targetSlotIdx) => {
+        e.preventDefault();
+        let dataStr = e.dataTransfer.getData("text/plain");
+        let dragData = null;
+        if (dataStr) {
+            try {
+                dragData = JSON.parse(dataStr);
+            } catch(err) {}
+        }
+        if (!dragData) {
+            dragData = selectedCard();
+        }
+        if (!dragData) return;
+
+        const { item, index, sourceZone } = dragData;
+        const currentSlots = [...lvl1Slots()];
+        const currentPool = [...lvl1Items()];
+
+        if (sourceZone === 'pool') {
+            const existingItemInSlot = currentSlots[targetSlotIdx];
+            const itemIdxInPool = currentPool.indexOf(item);
+            if (itemIdxInPool !== -1) {
+                currentPool.splice(itemIdxInPool, 1);
+            }
+            currentSlots[targetSlotIdx] = item;
+            if (existingItemInSlot !== null) {
+                currentPool.push(existingItemInSlot);
+            }
+        } else if (sourceZone === 'slot') {
+            const sourceSlotIdx = index;
+            if (sourceSlotIdx === targetSlotIdx) return;
+            const existingItemInTarget = currentSlots[targetSlotIdx];
+            currentSlots[targetSlotIdx] = item;
+            currentSlots[sourceSlotIdx] = existingItemInTarget;
+        }
+
+        setLvl1Slots(currentSlots);
+        setLvl1Items(currentPool);
+        setSelectedCard(null);
+        Sound.playPickup();
+    };
+
+    const handleDropToPool = (e) => {
+        e.preventDefault();
+        let dataStr = e.dataTransfer.getData("text/plain");
+        let dragData = null;
+        if (dataStr) {
+            try {
+                dragData = JSON.parse(dataStr);
+            } catch(err) {}
+        }
+        if (!dragData) {
+            dragData = selectedCard();
+        }
+        if (!dragData) return;
+
+        const { item, index, sourceZone } = dragData;
+        if (sourceZone === 'slot') {
+            const currentSlots = [...lvl1Slots()];
+            const currentPool = [...lvl1Items()];
+            currentSlots[index] = null;
+            currentPool.push(item);
+            setLvl1Slots(currentSlots);
+            setLvl1Items(currentPool);
+            Sound.playPickup();
+        }
+        setSelectedCard(null);
+    };
+
+    const handlePoolItemClick = (item) => {
+        const currentSlots = [...lvl1Slots()];
+        const currentPool = [...lvl1Items()];
+        const emptySlotIdx = currentSlots.indexOf(null);
+
+        if (emptySlotIdx !== -1) {
+            const itemIdx = currentPool.indexOf(item);
+            if (itemIdx !== -1) {
+                currentPool.splice(itemIdx, 1);
+            }
+            currentSlots[emptySlotIdx] = item;
+            setLvl1Slots(currentSlots);
+            setLvl1Items(currentPool);
+            Sound.playPickup();
+        } else if (currentSlots.length === 1) {
+            const existing = currentSlots[0];
+            const itemIdx = currentPool.indexOf(item);
+            if (itemIdx !== -1) {
+                currentPool[itemIdx] = existing;
+            }
+            currentSlots[0] = item;
+            setLvl1Slots(currentSlots);
+            setLvl1Items(currentPool);
+            Sound.playPickup();
+        }
+    };
+
+    const handleSlotItemClick = (slotIdx) => {
+        const currentSlots = [...lvl1Slots()];
+        const currentPool = [...lvl1Items()];
+        const item = currentSlots[slotIdx];
+        if (item === null) return;
+
+        currentSlots[slotIdx] = null;
+        currentPool.push(item);
+        setLvl1Slots(currentSlots);
+        setLvl1Items(currentPool);
+        Sound.playPickup();
+    };
+
+    const handleComicSubmit = () => {
+        const vaultId = activePuzzle().id;
+        const questionIdx = lvl1QuestionIdx();
+        const data = LEVEL1_PUZZLES_DATA[vaultId][questionIdx];
+        let isCorrect = false;
+
+        if (data.type === "sort") {
+            if (lvl1Slots().includes(null)) {
+                setPuzzleFeedback("Please place all numbers in the slots first! 🤔");
+                setPuzzleFeedbackType("error");
+                return;
+            }
+            isCorrect = true;
+            for (let i = 0; i < data.correct.length; i++) {
+                if (lvl1Slots()[i] !== data.correct[i]) {
+                    isCorrect = false;
+                    break;
+                }
+            }
+        } else if (data.type === "equation") {
+            if (lvl1Slots()[0] === null) {
+                setPuzzleFeedback("Please drag the answer into the slot first! 🤔");
+                setPuzzleFeedbackType("error");
+                return;
+            }
+            isCorrect = (String(lvl1Slots()[0]) === String(data.correct));
+        }
+
+        if (isCorrect) {
+            Sound.playVictory();
+            if (questionIdx < LEVEL1_PUZZLES_DATA[vaultId].length - 1) {
+                setPuzzleFeedback("Awesome! You got it right! Ready for the next one? 🌟");
+                setPuzzleFeedbackType("success");
+                setTimeout(() => {
+                    const nextIdx = questionIdx + 1;
+                    setLvl1QuestionIdx(nextIdx);
+                    initLevel1Puzzle(vaultId, nextIdx);
+                }, 1500);
+            } else {
+                setPuzzleFeedback("TREASURE BOX CRACKED! CORE UNLOCKED! 🎉");
+                setPuzzleFeedbackType("success");
+                Vaults.markVaultUnlocked(vaultId);
+                Player.incrementScore();
+                setTimeout(() => {
+                    setActivePuzzle(null);
+                    if (GameEngine.getControls()) {
+                        GameEngine.getControls().lock();
+                    }
+                }, 1800);
+            }
+        } else {
+            setPuzzleFeedback("Oops! That's not correct. Let's try again! 💪");
+            setPuzzleFeedbackType("error");
+            setShakeOverlay(true);
+            setTimeout(() => setShakeOverlay(false), 450);
+            initLevel1Puzzle(vaultId, questionIdx);
+        }
+    };
+
+    const handleGoHome = () => {
+        setActivePuzzle(null);
+        setGameStarted(false);
+        setGameOver(false);
+        setVictory(false);
+        setIsPaused(false);
+        GameEngine.shutdown();
+    };
+
     // Math Input Handlers
     const handleAlgebraChange = (dir) => {
         let next = algebraDial();
@@ -691,8 +999,6 @@ function App() {
         } else {
             setPuzzleFeedback(errMsg || "Verification Failed. Decryption Error.");
             setPuzzleFeedbackType("error");
-            
-            Player.damage(6);
             
             setShakeOverlay(true);
             setTimeout(() => setShakeOverlay(false), 450);
@@ -993,183 +1299,348 @@ function App() {
                     const puzzle = activePuzzle();
                     return (
                         <div id="puzzle-overlay" class="overlay-screen active">
-                            <div class={`puzzle-container glass-container ${shakeOverlay() ? 'shake' : ''}`}>
-                                
-                                {/* Sidebar controls */}
-                                <div class="puzzle-sidebar">
-                                    <div class="puzzle-header">
-                                        <span class="zone-badge font-orbitron">
-                                            {puzzle.type.toUpperCase()} VAULT
-                                        </span>
-                                        <h2 class="font-orbitron">
-                                            {puzzle.name}
-                                        </h2>
-                                    </div>
+                            <Show when={level() === 1} fallback={
+                                <div class={`puzzle-container glass-container ${shakeOverlay() ? 'shake' : ''}`}>
                                     
-                                    <div class="puzzle-body font-rajdhani">
-                                        <Show when={puzzle.type === "algebra" || puzzle.type === "geometry"}>
-                                            <p class="problem-description">{puzzle.problem}</p>
-                                            <div class="input-group">
-                                                <span class="input-label">{puzzle.label || "Value"}</span>
-                                                <Show when={puzzle.options} fallback={
-                                                    puzzle.max - puzzle.min > 30 ? (
-                                                        <div style={{ 'margin-top': '10px' }}>
-                                                            <span class="input-label">Current: <span class="text-gold">{algebraDial()}</span></span>
-                                                            <input 
-                                                                type="range" 
-                                                                min={puzzle.min} 
-                                                                max={puzzle.max} 
-                                                                value={algebraDial()} 
-                                                                onInput={handleAlgebraSlider}
-                                                                class="cyber-slider" 
-                                                            />
-                                                        </div>
-                                                    ) : (
-                                                        <div class="dial-controls">
-                                                            <button onClick={() => handleAlgebraChange('dec')} class="dial-btn">-</button>
-                                                            <span class="dial-value">{algebraDial()}</span>
-                                                            <button onClick={() => handleAlgebraChange('inc')} class="dial-btn">+</button>
-                                                        </div>
-                                                    )
-                                                }>
-                                                    <div class="button-grid">
-                                                        <For each={puzzle.options}>
-                                                            {(opt) => (
-                                                                <button 
-                                                                    onClick={() => {
-                                                                        setAlgebraDial(opt);
-                                                                        Vaults.updateVisualizer(puzzle.id, opt);
-                                                                        Sound.playPickup();
-                                                                    }}
-                                                                    class={algebraDial() === opt ? "ratio-btn active" : "ratio-btn"}
-                                                                >
-                                                                    {opt}
-                                                                </button>
-                                                            )}
-                                                        </For>
-                                                    </div>
-                                                </Show>
-                                            </div>
-                                        </Show>
-
-                                        <Show when={puzzle.type === "quadratics"}>
-                                            <p class="problem-description">{puzzle.problem}</p>
-                                            <button onClick={handleQuadraticsLaunch} class="glow-button font-orbitron" style={{ 'margin-bottom': '15px' }}>
-                                                LAUNCH PROJECTILE
-                                            </button>
-                                            <Show when={puzzle.options}>
+                                    {/* Sidebar controls */}
+                                    <div class="puzzle-sidebar">
+                                        <div class="puzzle-header">
+                                            <span class="zone-badge font-orbitron">
+                                                {puzzle.type.toUpperCase()} VAULT
+                                            </span>
+                                            <h2 class="font-orbitron">
+                                                {puzzle.name}
+                                            </h2>
+                                        </div>
+                                        
+                                        <div class="puzzle-body font-rajdhani">
+                                            <Show when={puzzle.type === "algebra" || puzzle.type === "geometry"}>
+                                                <p class="problem-description">{puzzle.problem}</p>
                                                 <div class="input-group">
-                                                    <span class="input-label">Select Ground Intersection Root</span>
-                                                    <div class="button-grid">
-                                                        <For each={puzzle.options}>
-                                                            {(opt) => (
-                                                                <button 
-                                                                    onClick={() => handleQuadraticsSelectRoot(opt)} 
-                                                                    class={quadraticsRoot() === opt ? "ratio-btn active" : "ratio-btn"}
-                                                                >
-                                                                    t = {opt}s
-                                                                </button>
-                                                            )}
-                                                        </For>
-                                                    </div>
+                                                    <span class="input-label">{puzzle.label || "Value"}</span>
+                                                    <Show when={puzzle.options} fallback={
+                                                        puzzle.max - puzzle.min > 30 ? (
+                                                            <div style={{ 'margin-top': '10px' }}>
+                                                                <span class="input-label">Current: <span class="text-gold">{algebraDial()}</span></span>
+                                                                <input 
+                                                                    type="range" 
+                                                                    min={puzzle.min} 
+                                                                    max={puzzle.max} 
+                                                                    value={algebraDial()} 
+                                                                    onInput={handleAlgebraSlider}
+                                                                    class="cyber-slider" 
+                                                                />
+                                                            </div>
+                                                        ) : (
+                                                            <div class="dial-controls">
+                                                                <button onClick={() => handleAlgebraChange('dec')} class="dial-btn">-</button>
+                                                                <span class="dial-value">{algebraDial()}</span>
+                                                                <button onClick={() => handleAlgebraChange('inc')} class="dial-btn">+</button>
+                                                            </div>
+                                                        )
+                                                    }>
+                                                        <div class="button-grid">
+                                                            <For each={puzzle.options}>
+                                                                {(opt) => (
+                                                                    <button 
+                                                                        onClick={() => {
+                                                                            setAlgebraDial(opt);
+                                                                            Vaults.updateVisualizer(puzzle.id, opt);
+                                                                            Sound.playPickup();
+                                                                        }}
+                                                                        class={algebraDial() === opt ? "ratio-btn active" : "ratio-btn"}
+                                                                    >
+                                                                        {opt}
+                                                                    </button>
+                                                                )}
+                                                            </For>
+                                                        </div>
+                                                    </Show>
                                                 </div>
                                             </Show>
-                                        </Show>
 
-                                        <Show when={puzzle.type === "trig"}>
-                                            <p class="problem-description">{puzzle.problem}</p>
-                                            <Show when={puzzle.options} fallback={
-                                                <>
+                                            <Show when={puzzle.type === "quadratics"}>
+                                                <p class="problem-description">{puzzle.problem}</p>
+                                                <button onClick={handleQuadraticsLaunch} class="glow-button font-orbitron" style={{ 'margin-bottom': '15px' }}>
+                                                    LAUNCH PROJECTILE
+                                                </button>
+                                                <Show when={puzzle.options}>
                                                     <div class="input-group">
-                                                        <span class="input-label">Select Trig Ratio Formula</span>
+                                                        <span class="input-label">Select Ground Intersection Root</span>
                                                         <div class="button-grid">
-                                                            <For each={['sin', 'cos', 'tan']}>
-                                                                {(ratio) => (
+                                                            <For each={puzzle.options}>
+                                                                {(opt) => (
                                                                     <button 
-                                                                        onClick={() => handleTrigSelectRatio(ratio)}
-                                                                        class={trigRatio() === ratio ? "ratio-btn active" : "ratio-btn"}
+                                                                        onClick={() => handleQuadraticsSelectRoot(opt)} 
+                                                                        class={quadraticsRoot() === opt ? "ratio-btn active" : "ratio-btn"}
                                                                     >
-                                                                        {ratio} 30°
+                                                                        t = {opt}s
                                                                     </button>
                                                                 )}
                                                             </For>
                                                         </div>
                                                     </div>
-                                                    <div class="input-group" style={{ 'margin-top': '10px' }}>
-                                                        <span class="input-label">Distance (d): <span class="text-gold">{trigDistance()}m</span></span>
-                                                        <input 
-                                                            type="range" 
-                                                            min={puzzle.min} 
-                                                            max={puzzle.max} 
-                                                            value={trigDistance()} 
-                                                            onInput={handleTrigSlider}
-                                                            class="cyber-slider" 
-                                                        />
+                                                </Show>
+                                            </Show>
+
+                                            <Show when={puzzle.type === "trig"}>
+                                                <p class="problem-description">{puzzle.problem}</p>
+                                                <Show when={puzzle.options} fallback={
+                                                    <>
+                                                        <div class="input-group">
+                                                            <span class="input-label">Select Trig Ratio Formula</span>
+                                                            <div class="button-grid">
+                                                                <For each={['sin', 'cos', 'tan']}>
+                                                                    {(ratio) => (
+                                                                        <button 
+                                                                            onClick={() => handleTrigSelectRatio(ratio)}
+                                                                            class={trigRatio() === ratio ? "ratio-btn active" : "ratio-btn"}
+                                                                        >
+                                                                            {ratio} 30°
+                                                                        </button>
+                                                                    )}
+                                                                </For>
+                                                            </div>
+                                                        </div>
+                                                        <div class="input-group" style={{ 'margin-top': '10px' }}>
+                                                            <span class="input-label">Distance (d): <span class="text-gold">{trigDistance()}m</span></span>
+                                                            <input 
+                                                                type="range" 
+                                                                min={puzzle.min} 
+                                                                max={puzzle.max} 
+                                                                value={trigDistance()} 
+                                                                onInput={handleTrigSlider}
+                                                                class="cyber-slider" 
+                                                            />
+                                                        </div>
+                                                    </>
+                                                }>
+                                                    <div class="input-group">
+                                                        <span class="input-label">Select Dimension Value</span>
+                                                        <div class="button-grid">
+                                                            <For each={puzzle.options}>
+                                                                {(opt) => (
+                                                                    <button 
+                                                                        onClick={() => handleTrigSelectRatio(opt)}
+                                                                        class={trigRatio() === opt ? "ratio-btn active" : "ratio-btn"}
+                                                                    >
+                                                                        {opt}m
+                                                                    </button>
+                                                                )}
+                                                            </For>
+                                                        </div>
                                                     </div>
-                                                </>
-                                            }>
+                                                </Show>
+                                            </Show>
+
+                                            <Show when={puzzle.type === "logic"}>
+                                                <p class="problem-description">{puzzle.problem}</p>
                                                 <div class="input-group">
-                                                    <span class="input-label">Select Dimension Value</span>
+                                                    <span class="input-label">Select Gate Output</span>
                                                     <div class="button-grid">
-                                                        <For each={puzzle.options}>
-                                                            {(opt) => (
-                                                                <button 
-                                                                    onClick={() => handleTrigSelectRatio(opt)}
-                                                                    class={trigRatio() === opt ? "ratio-btn active" : "ratio-btn"}
-                                                                >
-                                                                    {opt}m
-                                                                </button>
-                                                            )}
-                                                        </For>
+                                                        <button 
+                                                            onClick={() => setLogicOutput(0)} 
+                                                            class={logicOutput() === 0 ? "ratio-btn active" : "ratio-btn"}
+                                                        >
+                                                            Output Y = 0
+                                                        </button>
+                                                        <button 
+                                                            onClick={() => setLogicOutput(1)} 
+                                                            class={logicOutput() === 1 ? "ratio-btn active" : "ratio-btn"}
+                                                        >
+                                                            Output Y = 1
+                                                        </button>
                                                     </div>
                                                 </div>
                                             </Show>
-                                        </Show>
+                                        </div>
 
-                                        <Show when={puzzle.type === "logic"}>
-                                            <p class="problem-description">{puzzle.problem}</p>
-                                            <div class="input-group">
-                                                <span class="input-label">Select Gate Output</span>
-                                                <div class="button-grid">
-                                                    <button 
-                                                        onClick={() => setLogicOutput(0)} 
-                                                        class={logicOutput() === 0 ? "ratio-btn active" : "ratio-btn"}
-                                                    >
-                                                        Output Y = 0
-                                                    </button>
-                                                    <button 
-                                                        onClick={() => setLogicOutput(1)} 
-                                                        class={logicOutput() === 1 ? "ratio-btn active" : "ratio-btn"}
-                                                    >
-                                                        Output Y = 1
-                                                    </button>
-                                                </div>
+                                        <div class="puzzle-actions">
+                                            <button onClick={handleSubmitAnswer} class="glow-button font-orbitron">SUBMIT ANSWER</button>
+                                            <button onClick={handleAbandonVault} class="exit-button font-orbitron">ABANDON VAULT</button>
+                                        </div>
+                                        
+                                        <div class={`feedback-msg font-rajdhani ${puzzleFeedbackType() === 'success' ? 'feedback-success' : 'feedback-error'}`}>
+                                            {puzzleFeedback()}
+                                        </div>
+                                    </div>
+
+                                    {/* Visualizer Canvas */}
+                                    <div class="puzzle-visualizer">
+                                        <div class="visualizer-header font-orbitron">HOLOGRAPHIC DIAGRAM SYSTEM</div>
+                                        <div class="canvas-wrapper">
+                                            <canvas ref={puzzleCanvasRef} id="puzzle-canvas"></canvas>
+                                        </div>
+                                        <div class="visualizer-footer font-rajdhani">
+                                            Drag to rotate model. Look for coordinates and dimensions.
+                                        </div>
+                                    </div>
+
+                                </div>
+                            }>
+                                {/* Fully Comic Animated Drag-and-Drop Puzzle Overlay for Level 1 */}
+                                <div class={`puzzle-container comic-popup ${shakeOverlay() ? 'shake' : ''}`}>
+                                    {/* Header row with Title and Resume / Home buttons */}
+                                    <div class="comic-header-row">
+                                        <h2 class="comic-vault-title font-orbitron">
+                                            💥 TREASURE CHEST {puzzle.id + 1} 💥
+                                        </h2>
+                                        <div class="comic-control-btns">
+                                            <button class="comic-btn comic-btn-resume" onClick={handleAbandonVault}>
+                                                ▶ RESUME GAME
+                                            </button>
+                                            <button class="comic-btn comic-btn-home" onClick={handleGoHome}>
+                                                🏠 HOME
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Concept Header */}
+                                    <div class="comic-concept-header font-orbitron" style={{ 'text-align': 'center', 'font-weight': 'bold', 'margin-bottom': '2px', 'font-size': '1.3rem', 'color': '#c2410c' }}>
+                                        {puzzle.id === 0 ? "🎯 CONCEPT: ASCENDING ORDER" : 
+                                         puzzle.id === 1 ? "🎯 CONCEPT: DESCENDING ORDER" : 
+                                         "🎯 CONCEPT: COMPARING NUMBERS"}
+                                    </div>
+
+                                    {/* Star Progress Bar */}
+                                    <div class="comic-stars-container" style={{ 'text-align': 'center' }}>
+                                        <p style={{ 'font-weight': 'bold', 'margin-bottom': '5px', 'font-size': '1.1rem', 'color': '#000' }}>
+                                            Question {lvl1QuestionIdx() + 1} of {LEVEL1_PUZZLES_DATA[puzzle.id] ? LEVEL1_PUZZLES_DATA[puzzle.id].length : 3}
+                                        </p>
+                                        <div class="comic-stars">
+                                            <For each={LEVEL1_PUZZLES_DATA[puzzle.id] || []}>
+                                                {(_, idx) => (
+                                                    <span class={`comic-star ${lvl1QuestionIdx() >= idx() ? 'active' : ''}`}>⭐</span>
+                                                )}
+                                            </For>
+                                        </div>
+                                    </div>
+
+                                    {/* Mascot Briefing Bubble */}
+                                    <div class="comic-mascot-row">
+                                        <div class="comic-mascot">🤖</div>
+                                        <div class="comic-speech-bubble-inside">
+                                            <p class="comic-bubble">
+                                                {LEVEL1_PUZZLES_DATA[puzzle.id] ? LEVEL1_PUZZLES_DATA[puzzle.id][lvl1QuestionIdx()].instruction : ""}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {/* Question Game Board Area */}
+                                    <div class="comic-game-area">
+                                        {/* Render sorting cards or equation cards */}
+                                        <Show when={LEVEL1_PUZZLES_DATA[puzzle.id] && LEVEL1_PUZZLES_DATA[puzzle.id][lvl1QuestionIdx()].type === "sort"} fallback={
+                                            /* Equation Completion Case */
+                                            <div class="comic-equation-row">
+                                                <For each={LEVEL1_PUZZLES_DATA[puzzle.id] ? LEVEL1_PUZZLES_DATA[puzzle.id][lvl1QuestionIdx()].template : []}>
+                                                    {(part) => {
+                                                        if (part === "SLOT") {
+                                                            const isFilled = () => lvl1Slots()[0] !== null;
+                                                            return (
+                                                                <div 
+                                                                    class={`comic-slot ${isDragOver() ? 'dragover' : ''}`}
+                                                                    onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
+                                                                    onDragLeave={() => setIsDragOver(false)}
+                                                                    onDrop={(e) => { setIsDragOver(false); handleDropToSlot(e, 0); }}
+                                                                    onClick={() => handleSlotItemClick(0)}
+                                                                >
+                                                                    <Show when={isFilled()} fallback={<span class="comic-slot-hint">?</span>}>
+                                                                        <div 
+                                                                            class="comic-card animate-pulse-slow" 
+                                                                            draggable="true" 
+                                                                            onDragStart={(e) => handleDragStart(e, lvl1Slots()[0], 0, 'slot')}
+                                                                            onClick={(e) => { e.stopPropagation(); handleSlotItemClick(0); }}
+                                                                            style={{ 
+                                                                                'background-color': getColorForItem(lvl1Slots()[0]),
+                                                                                'transform': 'rotate(2deg)'
+                                                                            }}
+                                                                        >
+                                                                            {lvl1Slots()[0]}
+                                                                        </div>
+                                                                    </Show>
+                                                                </div>
+                                                            );
+                                                        } else {
+                                                            return <span style={{ 'font-size': '2.8rem', 'font-weight': '900', 'color': '#000', 'text-shadow': '2px 2px 0px #fff' }}>{part}</span>;
+                                                        }
+                                                    }}
+                                                </For>
+                                            </div>
+                                        }>
+                                            {/* Sorting Case */}
+                                            <div class="comic-slots-container">
+                                                <For each={lvl1Slots()}>
+                                                    {(slotItem, idx) => {
+                                                        const isFilled = () => slotItem !== null;
+                                                        return (
+                                                            <div 
+                                                                class={`comic-slot ${isDragOver() ? 'dragover' : ''}`}
+                                                                onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
+                                                                onDragLeave={() => setIsDragOver(false)}
+                                                                onDrop={(e) => { setIsDragOver(false); handleDropToSlot(e, idx()); }}
+                                                                onClick={() => handleSlotItemClick(idx())}
+                                                            >
+                                                                <Show when={isFilled()} fallback={<span class="comic-slot-hint">Slot {idx() + 1}</span>}>
+                                                                    <div 
+                                                                        class="comic-card animate-pulse-slow" 
+                                                                        draggable="true" 
+                                                                        onDragStart={(e) => handleDragStart(e, slotItem, idx(), 'slot')}
+                                                                        onClick={(e) => { e.stopPropagation(); handleSlotItemClick(idx()); }}
+                                                                        style={{ 
+                                                                            'background-color': getColorForItem(slotItem),
+                                                                            'transform': `rotate(${idx() % 2 === 0 ? '-2deg' : '2deg'})`
+                                                                        }}
+                                                                    >
+                                                                        {slotItem}
+                                                                    </div>
+                                                                </Show>
+                                                            </div>
+                                                        );
+                                                    }}
+                                                </For>
                                             </div>
                                         </Show>
+
+                                        <p style={{ 'font-weight': 'bold', 'margin-top': '10px', 'font-size': '1.1rem', 'color': '#555' }}>
+                                            👇 Drag cards into slots, or click cards to place/remove them! 👇
+                                        </p>
+
+                                        {/* Card Pool */}
+                                        <div 
+                                            class="comic-card-pool"
+                                            onDragOver={(e) => e.preventDefault()}
+                                            onDrop={(e) => handleDropToPool(e)}
+                                        >
+                                            <For each={lvl1Items()}>
+                                                {(item, idx) => (
+                                                    <div 
+                                                        class="comic-card animate-pulse-slow" 
+                                                        draggable="true" 
+                                                        onDragStart={(e) => handleDragStart(e, item, lvl1Items().indexOf(item), 'pool')}
+                                                        onClick={() => handlePoolItemClick(item)}
+                                                        style={{ 
+                                                            'background-color': getColorForItem(item),
+                                                            'transform': `rotate(${idx() % 2 === 0 ? '3deg' : '-3deg'})`
+                                                        }}
+                                                    >
+                                                        {item}
+                                                    </div>
+                                                )}
+                                            </For>
+                                        </div>
                                     </div>
 
-                                    <div class="puzzle-actions">
-                                        <button onClick={handleSubmitAnswer} class="glow-button font-orbitron">SUBMIT ANSWER</button>
-                                        <button onClick={handleAbandonVault} class="exit-button font-orbitron">ABANDON VAULT</button>
-                                    </div>
-                                    
-                                    <div class={`feedback-msg font-rajdhani ${puzzleFeedbackType() === 'success' ? 'feedback-success' : 'feedback-error'}`}>
-                                        {puzzleFeedback()}
+                                    {/* Actions & Feedback */}
+                                    <div style={{ 'display': 'flex', 'flex-direction': 'column', 'align-items': 'center', 'width': '100%' }}>
+                                        <button class="comic-btn comic-btn-check" onClick={handleComicSubmit}>
+                                            🚀 CHECK ANSWER! 🚀
+                                        </button>
+                                        <div class={`feedback-msg font-rajdhani ${puzzleFeedbackType() === 'success' ? 'feedback-success' : 'feedback-error'}`} style={{ 'margin-top': '15px' }}>
+                                            {puzzleFeedback()}
+                                        </div>
                                     </div>
                                 </div>
-
-                                {/* Visualizer Canvas */}
-                                <div class="puzzle-visualizer">
-                                    <div class="visualizer-header font-orbitron">HOLOGRAPHIC DIAGRAM SYSTEM</div>
-                                    <div class="canvas-wrapper">
-                                        <canvas ref={puzzleCanvasRef} id="puzzle-canvas"></canvas>
-                                    </div>
-                                    <div class="visualizer-footer font-rajdhani">
-                                        Drag to rotate model. Look for coordinates and dimensions.
-                                    </div>
-                                </div>
-
-                            </div>
+                            </Show>
                         </div>
                     );
                 })()}
