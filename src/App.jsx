@@ -1480,12 +1480,12 @@ function App() {
             {/* Pause Screen Overlay */}
             <Show when={isPaused()}>
                 <div id="pause-screen" class="overlay-screen active" style={{ 'z-index': 9999 }} onClick={handleResume}>
-                    <div class="glass-container menu-box" onClick={(e) => e.stopPropagation()}>
-                        <h1 class="game-title font-orbitron" style={{ color: 'var(--color-primary)' }}>GAME PAUSED</h1>
-                        <p class="game-subtitle font-rajdhani">Click Resume or hit Pause to return to the mission.</p>
+                    <div class="comic-popup comic-popup-pause" onClick={(e) => e.stopPropagation()}>
+                        <h1 class="comic-game-title font-orbitron" style={{ 'font-size': '2.8rem', 'text-shadow': '3px 3px 0px #fff, 5px 5px 0px #000' }}>GAME PAUSED</h1>
+                        <p class="comic-formula-instructions" style={{ 'font-weight': 'bold', 'margin-top': '5px', 'margin-bottom': '15px' }}>Click Resume or hit Pause to return to the mission.</p>
                         <div style={{ display: 'flex', gap: '15px', 'justify-content': 'center' }}>
-                            <button onClick={handleResume} class="glow-button font-orbitron" style={{ width: '160px' }}>RESUME</button>
-                            <button onClick={handleGoHome} class="exit-button font-orbitron" style={{ width: '160px', 'background-color': '#ef4444', 'border-color': '#ef4444', color: '#fff' }}>HOME</button>
+                            <button onClick={handleResume} class="comic-btn comic-btn-resume" style={{ width: '150px' }}>▶ RESUME</button>
+                            <button onClick={handleGoHome} class="comic-btn comic-btn-home" style={{ width: '150px' }}>🏠 HOME</button>
                         </div>
                     </div>
                 </div>
@@ -1494,10 +1494,10 @@ function App() {
             {/* Game Over Screen */}
             <Show when={gameOver()}>
                 <div id="end-screen" class="overlay-screen active">
-                    <div class="glass-container menu-box">
-                        <h1 class="game-title font-orbitron" style={{ color: 'var(--color-accent)' }}>SYSTEM FAILURE</h1>
-                        <p class="game-subtitle font-orbitron">Your health dropped to 0%.</p>
-                        <button onClick={handleRedeploy} class="glow-button font-orbitron">REDEPLOY</button>
+                    <div class="comic-popup comic-popup-gameover">
+                        <h1 class="comic-game-title font-orbitron" style={{ 'font-size': '2.8rem', 'text-shadow': '3px 3px 0px #fff, 5px 5px 0px #000', 'color': '#ff3b30' }}>💥 SYSTEM CRASH! 💥</h1>
+                        <p class="comic-formula-instructions" style={{ 'font-weight': 'bold', 'margin-top': '5px', 'margin-bottom': '15px' }}>Your health dropped to 0%.</p>
+                        <button onClick={handleRedeploy} class="comic-btn comic-btn-home" style={{ width: '200px', background: '#ffe600', color: '#000' }}>⚡ REDEPLOY! ⚡</button>
                     </div>
                 </div>
             </Show>
@@ -1505,10 +1505,10 @@ function App() {
             {/* Victory Screen */}
             <Show when={victory()}>
                 <div id="end-screen" class="overlay-screen active">
-                    <div class="glass-container menu-box">
-                        <h1 class="game-title font-orbitron" style={{ color: 'var(--color-success)' }}>MISSION SECURED</h1>
-                        <p class="game-subtitle font-orbitron">All treasure vaults decrypted.</p>
-                        <button onClick={handleRedeploy} class="glow-button font-orbitron">REPLAY</button>
+                    <div class="comic-popup comic-popup-victory">
+                        <h1 class="comic-game-title font-orbitron" style={{ 'font-size': '2.8rem', 'text-shadow': '3px 3px 0px #fff, 5px 5px 0px #000', 'color': '#22c55e' }}>🏆 MISSION SECURED! 🏆</h1>
+                        <p class="comic-formula-instructions" style={{ 'font-weight': 'bold', 'margin-top': '5px', 'margin-bottom': '15px' }}>All treasure vaults decrypted.</p>
+                        <button onClick={handleRedeploy} class="comic-btn comic-btn-resume" style={{ width: '200px', background: '#ffe600', color: '#000' }}>⭐ REPLAY! ⭐</button>
                     </div>
                 </div>
             </Show>
@@ -1520,7 +1520,7 @@ function App() {
                     return (
                         <div id="puzzle-overlay" class="overlay-screen active">
                             <Show when={level() === 1 || level() === 2} fallback={
-                                <div class={`puzzle-container glass-container ${shakeOverlay() ? 'shake' : ''}`}>
+                                <div class={`puzzle-container comic-popup comic-popup-puzzle ${shakeOverlay() ? 'shake' : ''}`}>
                                     
                                     {/* Sidebar controls */}
                                     <div class="puzzle-sidebar">
@@ -1876,22 +1876,25 @@ function App() {
             {/* Loading Screen Overlay */}
             <Show when={loadingProgress() !== null}>
                 <div id="loading-screen" class="overlay-screen active">
-                    <div class="glass-container loading-box">
-                        <div class="loading-dots-bg"></div>
-                        <h1 class="loading-title font-orbitron">INITIALIZING SYSTEMS</h1>
-                        <p class="loading-subtitle font-orbitron">LOADING LEVEL {level()}</p>
+                    <div class="comic-popup comic-popup-loading">
+                        <h1 class="comic-game-title font-orbitron" style={{ 'font-size': '2.4rem', 'text-shadow': '3px 3px 0px #fff, 5px 5px 0px #000' }}>INITIALIZING STATION!</h1>
+                        <p class="comic-formula-instructions" style={{ 'font-weight': 'bold', 'margin-bottom': '5px' }}>LOADING LEVEL {level()}</p>
                         
-                        <div class="progress-container">
-                            <div class="progress-bar-glow"></div>
-                            <div class="progress-bar-fill" style={{ width: `${loadingProgress()}%` }}></div>
+                        <div class="comic-progress-container">
+                            <div class="comic-progress-bar-fill" style={{ width: `${loadingProgress()}%` }}></div>
                         </div>
                         
-                        <div class="progress-text font-rajdhani">
+                        <div class="comic-formula-display" style={{ 'font-size': '1.1rem', padding: '6px 12px', background: '#fff', border: '3px solid #000', 'box-shadow': '3px 3px 0px #000' }}>
                             {loadingProgress()}% OF ASSETS SECURED
                         </div>
                         
-                        <div class="loading-tip font-rajdhani">
-                            <span class="tip-prefix font-orbitron">TIP:</span> Decrypt vaults to get anti-gravity orbs and escape keys.
+                        <div class="comic-mascot-row" style={{ 'margin-top': '15px', width: '100%', 'box-sizing': 'border-box' }}>
+                            <div class="comic-mascot">🤖</div>
+                            <div class="comic-speech-bubble-inside">
+                                <p class="comic-bubble" style={{ 'font-size': '0.95rem' }}>
+                                    <span style={{ 'font-family': 'Bangers', 'color': '#ff3b30' }}>TIP:</span> Decrypt vaults to get anti-gravity orbs and escape keys!
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>

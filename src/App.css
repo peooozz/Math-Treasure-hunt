@@ -2154,5 +2154,293 @@ body, html, #root, .App {
     transition: opacity 0.3s ease;
 }
 
+/* Pause Screen Comic Overlay Style */
+.comic-popup-pause {
+    background: radial-gradient(rgba(0, 0, 0, 0.15) 15%, transparent 16%), linear-gradient(135deg, #a5f3fc 0%, #06b6d4 100%) !important;
+    background-size: 14px 14px, 100% 100% !important;
+    border-color: #000000 !important;
+    color: #000000 !important;
+    text-align: center;
+    max-width: 480px !important;
+    align-items: center;
+}
+
+/* Game Over Screen Comic Overlay Style */
+.comic-popup-gameover {
+    background: radial-gradient(rgba(0, 0, 0, 0.15) 15%, transparent 16%), linear-gradient(135deg, #fecaca 0%, #ef4444 100%) !important;
+    background-size: 14px 14px, 100% 100% !important;
+    border-color: #000000 !important;
+    color: #000000 !important;
+    text-align: center;
+    max-width: 480px !important;
+    align-items: center;
+}
+
+/* Victory Screen Comic Overlay Style */
+.comic-popup-victory {
+    background: radial-gradient(rgba(0, 0, 0, 0.15) 15%, transparent 16%), linear-gradient(135deg, #bbf7d0 0%, #22c55e 100%) !important;
+    background-size: 14px 14px, 100% 100% !important;
+    border-color: #000000 !important;
+    color: #000000 !important;
+    text-align: center;
+    max-width: 480px !important;
+    align-items: center;
+}
+
+/* Loading Screen Comic Overlay Style */
+.comic-popup-loading {
+    background: radial-gradient(rgba(0, 0, 0, 0.15) 15%, transparent 16%), linear-gradient(135deg, #ddd6fe 0%, #8b5cf6 100%) !important;
+    background-size: 14px 14px, 100% 100% !important;
+    border-color: #000000 !important;
+    color: #000000 !important;
+    padding: 30px !important;
+    max-width: 550px !important;
+    text-align: center;
+    align-items: center;
+}
+
+/* Comic Progress Bar */
+.comic-progress-container {
+    width: 100%;
+    height: 28px;
+    background: #ffffff !important;
+    border: 4px solid #000000 !important;
+    border-radius: 0px !important;
+    box-shadow: 4px 4px 0px #000000 !important;
+    position: relative;
+    margin: 20px 0;
+    overflow: hidden;
+}
+.comic-progress-bar-fill {
+    height: 100%;
+    background: #ffe600 !important; /* Bright yellow */
+    border-right: 4px solid #000000 !important;
+    transition: width 0.3s ease;
+}
+
+/* Level 3 Comic Math Puzzle Panel */
+.comic-popup-puzzle {
+    background: #fef08a !important; /* Yellow */
+    background-image: radial-gradient(rgba(0, 0, 0, 0.12) 15%, transparent 16%) !important;
+    background-size: 16px 16px !important;
+    border: 6px solid #000000 !important;
+    border-radius: 24px !important;
+    box-shadow: 12px 12px 0px #000000 !important;
+    color: #000000 !important;
+    font-family: 'Rajdhani', 'Comic Sans MS', sans-serif;
+    max-width: 1150px !important;
+    width: 95% !important;
+    height: 85% !important;
+    display: flex !important;
+    overflow: hidden !important;
+    padding: 0 !important;
+}
+
+.comic-popup-puzzle .puzzle-sidebar {
+    background: #ffe600 !important; /* Pop yellow */
+    border-right: 5px solid #000000 !important;
+    color: #000000 !important;
+    padding: 24px !important;
+}
+
+.comic-popup-puzzle .zone-badge {
+    background: #ff3b30 !important; /* Comic red */
+    color: #ffffff !important;
+    border: 3px solid #000000 !important;
+    box-shadow: 3px 3px 0px #000000 !important;
+    font-family: 'Bangers', cursive !important;
+    font-size: 1.1rem !important;
+    letter-spacing: 1px;
+    border-radius: 0px !important;
+}
+
+.comic-popup-puzzle .puzzle-header h2 {
+    font-family: 'Bangers', cursive !important;
+    font-size: 2.2rem !important;
+    color: #000000 !important;
+    text-shadow: 2px 2px 0px #ffffff !important;
+    margin-top: 10px;
+}
+
+.comic-popup-puzzle .problem-description {
+    font-family: 'Comic Neue', cursive !important;
+    font-weight: bold !important;
+    color: #000000 !important;
+    font-size: 1.2rem !important;
+    line-height: 1.5;
+    background: #ffffff !important;
+    border: 3px solid #000000 !important;
+    padding: 12px !important;
+    border-radius: 8px !important;
+    box-shadow: 4px 4px 0px #000000 !important;
+}
+
+.comic-popup-puzzle .puzzle-visualizer {
+    background: #fef08a !important; /* Yellow dots */
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    padding: 20px;
+    gap: 15px;
+}
+
+.comic-popup-puzzle .visualizer-header {
+    font-family: 'Bangers', cursive !important;
+    font-size: 1.6rem !important;
+    color: #000000 !important;
+    text-align: center;
+    text-shadow: 2px 2px 0px #ffffff !important;
+}
+
+.comic-popup-puzzle .canvas-wrapper {
+    background: #ffffff !important;
+    border: 5px solid #000000 !important;
+    border-radius: 16px !important;
+    box-shadow: 6px 6px 0px #000000 !important;
+    flex-grow: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    position: relative;
+}
+
+.comic-popup-puzzle .visualizer-footer {
+    font-family: 'Comic Neue', cursive !important;
+    font-weight: bold !important;
+    color: #000000 !important;
+    text-align: center;
+    font-size: 1rem !important;
+}
+
+.comic-popup-puzzle .input-label {
+    font-family: 'Bangers', cursive !important;
+    color: #000000 !important;
+    font-size: 1.2rem !important;
+    letter-spacing: 0.5px;
+}
+
+.comic-popup-puzzle .ratio-btn {
+    background: #ffffff !important;
+    color: #000000 !important;
+    border: 3px solid #000000 !important;
+    font-family: 'Orbitron', sans-serif !important;
+    font-weight: 900 !important;
+    box-shadow: 3px 3px 0px #000000 !important;
+    border-radius: 8px !important;
+}
+.comic-popup-puzzle .ratio-btn:hover {
+    background: #e0f2fe !important; /* Sky light blue */
+    transform: translate(-2px, -2px) !important;
+    box-shadow: 5px 5px 0px #000000 !important;
+}
+.comic-popup-puzzle .ratio-btn:active {
+    transform: translate(2px, 2px) !important;
+    box-shadow: 1px 1px 0px #000000 !important;
+}
+.comic-popup-puzzle .ratio-btn.active {
+    background: #ff3b30 !important; /* Bright red */
+    color: #ffffff !important;
+    box-shadow: 3px 3px 0px #000000 !important;
+}
+
+/* Comic Slider */
+.comic-popup-puzzle .cyber-slider {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 12px;
+    background: #ffffff;
+    border: 3px solid #000000;
+    border-radius: 6px;
+    outline: none;
+    box-shadow: 2px 2px 0px #000000;
+}
+.comic-popup-puzzle .cyber-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 24px;
+    height: 24px;
+    background: #ffe600;
+    border: 3px solid #000000;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 1px 1px 0px #000000;
+}
+
+/* Comic Dial buttons */
+.comic-popup-puzzle .dial-btn {
+    background: #ffffff !important;
+    color: #000000 !important;
+    border: 3px solid #000000 !important;
+    box-shadow: 3px 3px 0px #000000 !important;
+    border-radius: 8px !important;
+    font-family: 'Bangers', cursive !important;
+    font-size: 1.4rem !important;
+}
+.comic-popup-puzzle .dial-btn:hover {
+    background: #ff3b30 !important;
+    color: #ffffff !important;
+}
+.comic-popup-puzzle .dial-value {
+    font-family: 'Bangers', cursive !important;
+    font-size: 2rem !important;
+    color: #000000 !important;
+    margin: 0 15px;
+}
+
+/* Comic actions at bottom */
+.comic-popup-puzzle .puzzle-actions {
+    display: flex;
+    gap: 12px;
+    width: 100%;
+}
+.comic-popup-puzzle .puzzle-actions button {
+    flex: 1;
+    font-family: 'Bangers', cursive !important;
+    font-size: 1.3rem !important;
+    letter-spacing: 1px;
+    padding: 10px 15px !important;
+    border-radius: 8px !important;
+    border: 3px solid #000000 !important;
+    box-shadow: 4px 4px 0px #000000 !important;
+    transition: transform 0.1s, box-shadow 0.1s;
+}
+.comic-popup-puzzle .puzzle-actions .glow-button {
+    background: #3b82f6 !important; /* blue */
+    color: #ffffff !important;
+}
+.comic-popup-puzzle .puzzle-actions .exit-button {
+    background: #ef4444 !important; /* red */
+    color: #ffffff !important;
+}
+.comic-popup-puzzle .puzzle-actions button:hover {
+    transform: translate(-2px, -2px) !important;
+    box-shadow: 6px 6px 0px #000000 !important;
+}
+.comic-popup-puzzle .puzzle-actions button:active {
+    transform: translate(2px, 2px) !important;
+    box-shadow: 2px 2px 0px #000000 !important;
+}
+
+/* Comic feedback message */
+.comic-popup-puzzle .feedback-msg {
+    font-family: 'Comic Neue', cursive !important;
+    font-weight: bold !important;
+    border: 3px solid #000000 !important;
+    border-radius: 8px !important;
+    padding: 10px !important;
+    text-align: center;
+    margin-top: 15px;
+    box-shadow: 3px 3px 0px #000000 !important;
+}
+.comic-popup-puzzle .feedback-success {
+    background: #86efac !important; /* Green */
+    color: #064e3b !important;
+}
+.comic-popup-puzzle .feedback-error {
+    background: #fca5a5 !important; /* Red */
+    color: #7f1d1d !important;
+}
+
+
 
 
