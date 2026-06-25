@@ -1086,6 +1086,7 @@ const GameEngine = (() => {
         const rawDelta = clock.getDelta();
         // Clamp deltaTime to prevent physics explosion on tab-switch or stall
         const deltaTime = Math.min(rawDelta, 0.1);
+        if (isNaN(deltaTime) || deltaTime <= 0) return;
         
         // 1. Physics simulation step
         Physics.step(deltaTime);

@@ -615,7 +615,7 @@ const Player = (() => {
             gunGroup.rotation.z += (0 - gunGroup.rotation.z) * 0.15;
         }
         
-        if (body && body.position.y < -15.0) {
+        if (body && (isNaN(body.position.y) || body.position.y < -15.0)) {
             body.position.copy(lastSpawnPos);
             body.velocity.set(0, 0, 0);
             if (callbacks.onNotification) {
