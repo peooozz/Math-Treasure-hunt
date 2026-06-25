@@ -718,7 +718,7 @@ const GameEngine = (() => {
                         const meshCenter = new THREE.Vector3();
                         meshBox.getCenter(meshCenter);
 
-                        const maxLimit = isOpenWorld ? 60 : 35;
+                        const maxLimit = isOpenWorld ? 22 : 35;
                         const minHeight = isOpenWorld ? 0.5 : 0.25;
                         const minSize = isOpenWorld ? 2.5 : 0.0;
 
@@ -1173,7 +1173,7 @@ const GameEngine = (() => {
                 Sound.playVictory();
                 uiCallbacks.onNextLevel();
             }
-        } else if (!portalActive && Player.getScore() >= 3) {
+        } else if (!portalActive && Player.getScore() >= (LEVELS[currentLevelIndex - 1]?.vaults.length || 3)) {
             spawnExitPortal();
         }
 

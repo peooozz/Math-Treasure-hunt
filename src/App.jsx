@@ -3,6 +3,7 @@ import GameEngine from './game/engine';
 import Vaults from './game/vaults';
 import Player from './game/player';
 import { Sound } from './game/sound';
+import { LEVELS } from './game/levels';
 import './App.css';
 
 const LEVEL_CARDS_DATA = [
@@ -124,6 +125,217 @@ const LEVEL1_PUZZLES_DATA = {
     ]
 };
 
+const LEVEL2_PUZZLES_DATA = {
+    // Treasure 1 (Vault ID 0): Addition (7 questions)
+    0: [
+        {
+            type: "equation",
+            template: ["5", "+", "3", "=", "SLOT"],
+            options: ["7", "8", "9", "10"],
+            correct: "8",
+            instruction: "Solve the puzzle: What is 5 + 3? ➕"
+        },
+        {
+            type: "equation",
+            template: ["12", "+", "SLOT", "=", "15"],
+            options: ["2", "3", "4", "5"],
+            correct: "3",
+            instruction: "Fill in the blank: 12 + ? = 15 ➕"
+        },
+        {
+            type: "equation",
+            template: ["SLOT", "+", "6", "=", "14"],
+            options: ["7", "8", "9", "10"],
+            correct: "8",
+            instruction: "Find the missing number! ? + 6 = 14 ➕"
+        },
+        {
+            type: "equation",
+            template: ["9", "+", "7", "=", "SLOT"],
+            options: ["15", "16", "17", "18"],
+            correct: "16",
+            instruction: "What is 9 + 7? Add them up! ➕"
+        },
+        {
+            type: "equation",
+            template: ["SLOT", "+", "5", "=", "11"],
+            options: ["4", "5", "6", "7"],
+            correct: "6",
+            instruction: "What number plus 5 equals 11? ➕"
+        },
+        {
+            type: "equation",
+            template: ["8", "+", "SLOT", "=", "17"],
+            options: ["7", "8", "9", "10"],
+            correct: "9",
+            instruction: "Complete the sum: 8 + ? = 17 ➕"
+        },
+        {
+            type: "equation",
+            template: ["14", "+", "5", "=", "SLOT"],
+            options: ["17", "18", "19", "20"],
+            correct: "19",
+            instruction: "Last addition! What is 14 + 5? ➕"
+        }
+    ],
+    // Treasure 2 (Vault ID 1): Subtraction (7 questions)
+    1: [
+        {
+            type: "equation",
+            template: ["9", "-", "4", "=", "SLOT"],
+            options: ["3", "4", "5", "6"],
+            correct: "5",
+            instruction: "Subtract the numbers: What is 9 - 4? ➖"
+        },
+        {
+            type: "equation",
+            template: ["15", "-", "SLOT", "=", "10"],
+            options: ["3", "4", "5", "6"],
+            correct: "5",
+            instruction: "Find the missing number: 15 - ? = 10 ➖"
+        },
+        {
+            type: "equation",
+            template: ["SLOT", "-", "3", "=", "8"],
+            options: ["9", "10", "11", "12"],
+            correct: "11",
+            instruction: "What number minus 3 equals 8? ➖"
+        },
+        {
+            type: "equation",
+            template: ["12", "-", "7", "=", "SLOT"],
+            options: ["4", "5", "6", "7"],
+            correct: "5",
+            instruction: "Take away 7 from 12! What is left? ➖"
+        },
+        {
+            type: "equation",
+            template: ["SLOT", "-", "6", "=", "4"],
+            options: ["8", "9", "10", "11"],
+            correct: "10",
+            instruction: "Fill in the blank: ? - 6 = 4 ➖"
+        },
+        {
+            type: "equation",
+            template: ["18", "-", "SLOT", "=", "9"],
+            options: ["7", "8", "9", "10"],
+            correct: "9",
+            instruction: "Subtract to find the slot: 18 - ? = 9 ➖"
+        },
+        {
+            type: "equation",
+            template: ["20", "-", "8", "=", "SLOT"],
+            options: ["10", "11", "12", "13"],
+            correct: "12",
+            instruction: "Last subtraction! What is 20 - 8? ➖"
+        }
+    ],
+    // Treasure 3 (Vault ID 2): Multiplication (7 questions)
+    2: [
+        {
+            type: "equation",
+            template: ["3", "*", "2", "=", "SLOT"],
+            options: ["4", "5", "6", "8"],
+            correct: "6",
+            instruction: "Let's multiply! What is 3 times 2? ✖️"
+        },
+        {
+            type: "equation",
+            template: ["5", "*", "SLOT", "=", "15"],
+            options: ["2", "3", "4", "5"],
+            correct: "3",
+            instruction: "Complete the equation: 5 times what is 15? ✖️"
+        },
+        {
+            type: "equation",
+            template: ["SLOT", "*", "4", "=", "16"],
+            options: ["2", "3", "4", "5"],
+            correct: "4",
+            instruction: "What number times 4 is 16? ✖️"
+        },
+        {
+            type: "equation",
+            template: ["2", "*", "7", "=", "SLOT"],
+            options: ["12", "14", "16", "18"],
+            correct: "14",
+            instruction: "Multiply 2 by 7! ✖️"
+        },
+        {
+            type: "equation",
+            template: ["SLOT", "*", "3", "=", "18"],
+            options: ["5", "6", "7", "8"],
+            correct: "6",
+            instruction: "Fill in the missing factor: ? * 3 = 18 ✖️"
+        },
+        {
+            type: "equation",
+            template: ["9", "*", "SLOT", "=", "18"],
+            options: ["1", "2", "3", "4"],
+            correct: "2",
+            instruction: "Solve the product: 9 * ? = 18 ✖️"
+        },
+        {
+            type: "equation",
+            template: ["4", "*", "5", "=", "SLOT"],
+            options: ["15", "18", "20", "22"],
+            correct: "20",
+            instruction: "Last multiplication! What is 4 * 5? ✖️"
+        }
+    ],
+    // Treasure 4 (Vault ID 3): Division (7 questions)
+    3: [
+        {
+            type: "equation",
+            template: ["6", "/", "2", "=", "SLOT"],
+            options: ["2", "3", "4", "5"],
+            correct: "3",
+            instruction: "Let's divide! What is 6 shared into 2 groups? ➗"
+        },
+        {
+            type: "equation",
+            template: ["10", "/", "SLOT", "=", "2"],
+            options: ["3", "4", "5", "6"],
+            correct: "5",
+            instruction: "Find the divisor: 10 divided by what equals 2? ➗"
+        },
+        {
+            type: "equation",
+            template: ["SLOT", "/", "3", "=", "4"],
+            options: ["8", "10", "12", "14"],
+            correct: "12",
+            instruction: "What number divided by 3 is 4? ➗"
+        },
+        {
+            type: "equation",
+            template: ["15", "/", "5", "=", "SLOT"],
+            options: ["2", "3", "4", "5"],
+            correct: "3",
+            instruction: "Divide 15 by 5! ➗"
+        },
+        {
+            type: "equation",
+            template: ["SLOT", "/", "2", "=", "8"],
+            options: ["12", "14", "16", "18"],
+            correct: "16",
+            instruction: "Fill in the blank: ? / 2 = 8 ➗"
+        },
+        {
+            type: "equation",
+            template: ["18", "/", "SLOT", "=", "6"],
+            options: ["2", "3", "4", "5"],
+            correct: "3",
+            instruction: "Solve the divisor: 18 / ? = 6 ➗"
+        },
+        {
+            type: "equation",
+            template: ["20", "/", "4", "=", "SLOT"],
+            options: ["4", "5", "6", "7"],
+            correct: "5",
+            instruction: "Last division! What is 20 / 4? ➗"
+        }
+    ]
+};
+
 const PLAYFUL_COLORS = ['#ff4757', '#2ed573', '#1e90ff', '#ffa502', '#ff6b81', '#70a1ff', '#7bed9f'];
 
 const getColorForItem = (item) => {
@@ -140,6 +352,8 @@ function App() {
     let canvasRef;
     let puzzleCanvasRef;
     let minimapRef;
+
+    const activeLevelPuzzles = () => level() === 1 ? LEVEL1_PUZZLES_DATA : LEVEL2_PUZZLES_DATA;
 
     // Menu Signals
     const [gameStarted, setGameStarted] = createSignal(false);
@@ -256,7 +470,7 @@ function App() {
                     GameEngine.getControls().unlock();
                 }
 
-                if (level() === 1) {
+                if (level() === 1 || level() === 2) {
                     setLvl1QuestionIdx(0);
                     initLevel1Puzzle(vault.id, 0);
                 }
@@ -289,6 +503,10 @@ function App() {
                 setIsLocked(true);
             } else {
                 setIsLocked(false);
+                if (!activePuzzle() && gameStarted() && !gameOver() && !victory()) {
+                    setIsPaused(true);
+                    GameEngine.pause();
+                }
             }
         };
         document.addEventListener('pointerlockchange', handleLockChange);
@@ -679,9 +897,8 @@ function App() {
         }, 100);
     };
 
-    // Level 1 Comic Puzzle Helpers
     const initLevel1Puzzle = (vaultId, questionIdx) => {
-        const data = LEVEL1_PUZZLES_DATA[vaultId][questionIdx];
+        const data = activeLevelPuzzles()[vaultId][questionIdx];
         if (data.type === "sort") {
             setLvl1Items([...data.numbers]);
             setLvl1Slots([null, null, null, null]);
@@ -811,7 +1028,7 @@ function App() {
     const handleComicSubmit = () => {
         const vaultId = activePuzzle().id;
         const questionIdx = lvl1QuestionIdx();
-        const data = LEVEL1_PUZZLES_DATA[vaultId][questionIdx];
+        const data = activeLevelPuzzles()[vaultId][questionIdx];
         let isCorrect = false;
 
         if (data.type === "sort") {
@@ -838,7 +1055,7 @@ function App() {
 
         if (isCorrect) {
             Sound.playVictory();
-            if (questionIdx < LEVEL1_PUZZLES_DATA[vaultId].length - 1) {
+            if (questionIdx < activeLevelPuzzles()[vaultId].length - 1) {
                 setPuzzleFeedback("Awesome! You got it right! Ready for the next one? 🌟");
                 setPuzzleFeedbackType("success");
                 setTimeout(() => {
@@ -1234,11 +1451,11 @@ function App() {
                         </div>
                         <div class="stat-row">
                             <span class="stat-label font-orbitron">DECRYPTED</span>
-                            <span class="stat-value text-gold font-orbitron">{score()} / 3</span>
+                            <span class="stat-value text-gold font-orbitron">{score()} / {LEVELS[level() - 1]?.vaults.length || 3}</span>
                         </div>
                         <div class="stat-row">
                             <span class="stat-label font-orbitron">KEYS HELD</span>
-                            <span class="stat-value text-gold font-orbitron">{keys()} / 3 🔑</span>
+                            <span class="stat-value text-gold font-orbitron">{keys()} / {LEVELS[level() - 1]?.vaults.length || 3} 🔑</span>
                         </div>
                     </div>
 
@@ -1262,11 +1479,14 @@ function App() {
 
             {/* Pause Screen Overlay */}
             <Show when={isPaused()}>
-                <div id="pause-screen" class="overlay-screen active" style={{ 'z-index': 9999 }}>
-                    <div class="glass-container menu-box">
+                <div id="pause-screen" class="overlay-screen active" style={{ 'z-index': 9999 }} onClick={handleResume}>
+                    <div class="glass-container menu-box" onClick={(e) => e.stopPropagation()}>
                         <h1 class="game-title font-orbitron" style={{ color: 'var(--color-primary)' }}>GAME PAUSED</h1>
                         <p class="game-subtitle font-rajdhani">Click Resume or hit Pause to return to the mission.</p>
-                        <button onClick={handleResume} class="glow-button font-orbitron" style={{ width: '200px' }}>RESUME</button>
+                        <div style={{ display: 'flex', gap: '15px', 'justify-content': 'center' }}>
+                            <button onClick={handleResume} class="glow-button font-orbitron" style={{ width: '160px' }}>RESUME</button>
+                            <button onClick={handleGoHome} class="exit-button font-orbitron" style={{ width: '160px', 'background-color': '#ef4444', 'border-color': '#ef4444', color: '#fff' }}>HOME</button>
+                        </div>
                     </div>
                 </div>
             </Show>
@@ -1299,7 +1519,7 @@ function App() {
                     const puzzle = activePuzzle();
                     return (
                         <div id="puzzle-overlay" class="overlay-screen active">
-                            <Show when={level() === 1} fallback={
+                            <Show when={level() === 1 || level() === 2} fallback={
                                 <div class={`puzzle-container glass-container ${shakeOverlay() ? 'shake' : ''}`}>
                                     
                                     {/* Sidebar controls */}
@@ -1497,18 +1717,25 @@ function App() {
 
                                     {/* Concept Header */}
                                     <div class="comic-concept-header font-orbitron" style={{ 'text-align': 'center', 'font-weight': 'bold', 'margin-bottom': '2px', 'font-size': '1.3rem', 'color': '#c2410c' }}>
-                                        {puzzle.id === 0 ? "🎯 CONCEPT: ASCENDING ORDER" : 
-                                         puzzle.id === 1 ? "🎯 CONCEPT: DESCENDING ORDER" : 
-                                         "🎯 CONCEPT: COMPARING NUMBERS"}
+                                        {level() === 1 ? (
+                                            puzzle.id === 0 ? "🎯 CONCEPT: ASCENDING ORDER" : 
+                                            puzzle.id === 1 ? "🎯 CONCEPT: DESCENDING ORDER" : 
+                                            "🎯 CONCEPT: COMPARING NUMBERS"
+                                        ) : (
+                                            puzzle.id === 0 ? "🎯 CONCEPT: ADDITION" : 
+                                            puzzle.id === 1 ? "🎯 CONCEPT: SUBTRACTION" : 
+                                            puzzle.id === 2 ? "🎯 CONCEPT: MULTIPLICATION" : 
+                                            "🎯 CONCEPT: DIVISION"
+                                        )}
                                     </div>
 
                                     {/* Star Progress Bar */}
                                     <div class="comic-stars-container" style={{ 'text-align': 'center' }}>
                                         <p style={{ 'font-weight': 'bold', 'margin-bottom': '5px', 'font-size': '1.1rem', 'color': '#000' }}>
-                                            Question {lvl1QuestionIdx() + 1} of {LEVEL1_PUZZLES_DATA[puzzle.id] ? LEVEL1_PUZZLES_DATA[puzzle.id].length : 3}
+                                            Question {lvl1QuestionIdx() + 1} of {activeLevelPuzzles()[puzzle.id] ? activeLevelPuzzles()[puzzle.id].length : 3}
                                         </p>
                                         <div class="comic-stars">
-                                            <For each={LEVEL1_PUZZLES_DATA[puzzle.id] || []}>
+                                            <For each={activeLevelPuzzles()[puzzle.id] || []}>
                                                 {(_, idx) => (
                                                     <span class={`comic-star ${lvl1QuestionIdx() >= idx() ? 'active' : ''}`}>⭐</span>
                                                 )}
@@ -1521,7 +1748,7 @@ function App() {
                                         <div class="comic-mascot">🤖</div>
                                         <div class="comic-speech-bubble-inside">
                                             <p class="comic-bubble">
-                                                {LEVEL1_PUZZLES_DATA[puzzle.id] ? LEVEL1_PUZZLES_DATA[puzzle.id][lvl1QuestionIdx()].instruction : ""}
+                                                {activeLevelPuzzles()[puzzle.id] ? activeLevelPuzzles()[puzzle.id][lvl1QuestionIdx()].instruction : ""}
                                             </p>
                                         </div>
                                     </div>
@@ -1529,10 +1756,10 @@ function App() {
                                     {/* Question Game Board Area */}
                                     <div class="comic-game-area">
                                         {/* Render sorting cards or equation cards */}
-                                        <Show when={LEVEL1_PUZZLES_DATA[puzzle.id] && LEVEL1_PUZZLES_DATA[puzzle.id][lvl1QuestionIdx()].type === "sort"} fallback={
+                                        <Show when={activeLevelPuzzles()[puzzle.id] && activeLevelPuzzles()[puzzle.id][lvl1QuestionIdx()].type === "sort"} fallback={
                                             /* Equation Completion Case */
                                             <div class="comic-equation-row">
-                                                <For each={LEVEL1_PUZZLES_DATA[puzzle.id] ? LEVEL1_PUZZLES_DATA[puzzle.id][lvl1QuestionIdx()].template : []}>
+                                                <For each={activeLevelPuzzles()[puzzle.id] ? activeLevelPuzzles()[puzzle.id][lvl1QuestionIdx()].template : []}>
                                                     {(part) => {
                                                         if (part === "SLOT") {
                                                             const isFilled = () => lvl1Slots()[0] !== null;
