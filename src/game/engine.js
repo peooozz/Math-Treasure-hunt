@@ -1178,7 +1178,9 @@ const GameEngine = (() => {
         }
 
         // 10. Render
-        renderer.render(scene, camera);
+        if (renderer && scene && camera) {
+            renderer.render(scene, camera);
+        }
     }
 
     function updateHUDPrompts() {

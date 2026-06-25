@@ -52,6 +52,9 @@ const Player = (() => {
     const bulletSpeed = 45;
     let lastShotTime = 0;
     const shotCooldown = 600; // Cooldown for throwing animation
+
+    // Spawn tracking
+    let lastSpawnPos = new THREE.Vector3(0, 3, 0);
     
     // UI Callbacks
     let callbacks = {
@@ -89,6 +92,10 @@ const Player = (() => {
         }
         
         callbacks.onKeysChange(keyCount);
+        
+        if (initialPosition) {
+            lastSpawnPos.copy(initialPosition);
+        }
         
         // 1. Create Cannon.js physical body for player (a sphere)
         const radius = 0.65; // Smaller radius to allow perfect navigation in narrow streets
@@ -472,8 +479,10 @@ const Player = (() => {
         
         if (spawnPos) {
             body.position.copy(spawnPos);
+            lastSpawnPos.copy(spawnPos);
         } else {
             body.position.set(0, 2, 0);
+            lastSpawnPos.set(0, 2, 0);
         }
         body.velocity.set(0, 0, 0);
         if (body) {
@@ -604,6 +613,14 @@ const Player = (() => {
             gunGroup.rotation.x += (0 - gunGroup.rotation.x) * 0.15;
             gunGroup.rotation.y += (0 - gunGroup.rotation.y) * 0.15;
             gunGroup.rotation.z += (0 - gunGroup.rotation.z) * 0.15;
+        }
+        
+        if (body && body.position.y < -15.0) {
+            body.position.copy(lastSpawnPos);
+            body.velocity.set(0, 0, 0);
+            if (callbacks.onNotification) {
+                callbacks.onNotification("RESPAWNED AT SAFE ZONE");
+            }
         }
         
         cameraRef.position.copy(body.position);
