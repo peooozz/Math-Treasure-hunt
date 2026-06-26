@@ -68,7 +68,11 @@ const Enemies = (() => {
 
         const center = new THREE.Vector3();
         box.getCenter(center);
-        enemyModelMesh.position.set(-center.x * scaleFactor, -center.y * scaleFactor, -center.z * scaleFactor);
+        enemyModelMesh.position.set(
+            -center.x * scaleFactor,
+            -box.min.y * scaleFactor - 0.25,
+            -center.z * scaleFactor
+        );
         enemyModelMesh.rotation.y = Math.PI;
 
         enemy.mesh.add(enemyModelMesh);
@@ -335,7 +339,11 @@ const Enemies = (() => {
 
             const center = new THREE.Vector3();
             box.getCenter(center);
-            enemyModelMesh.position.set(-center.x * scaleFactor, -center.y * scaleFactor, -center.z * scaleFactor);
+            enemyModelMesh.position.set(
+                -center.x * scaleFactor,
+                -box.min.y * scaleFactor - 0.25,
+                -center.z * scaleFactor
+            );
 
             // Rotate model to face forward
             enemyModelMesh.rotation.y = Math.PI;
