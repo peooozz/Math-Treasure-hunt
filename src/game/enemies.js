@@ -7,6 +7,7 @@ import { Sound } from './sound';
 import Player from './player';
 import { LEVELS, getAssetUrl } from './levels';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js';
 import Physics from './physics';
 
 const Enemies = (() => {
@@ -56,7 +57,7 @@ const Enemies = (() => {
             });
         });
         
-        const enemyModelMesh = enemyModelTemplate.clone();
+        const enemyModelMesh = SkeletonUtils.clone(enemyModelTemplate);
         enemyModelMesh.updateMatrixWorld(true);
         const box = new THREE.Box3().setFromObject(enemyModelMesh);
         const size = new THREE.Vector3();
@@ -322,7 +323,7 @@ const Enemies = (() => {
         let isProcedural = false;
 
         if (enemyModelTemplate) {
-            const enemyModelMesh = enemyModelTemplate.clone();
+            const enemyModelMesh = SkeletonUtils.clone(enemyModelTemplate);
             enemyModelMesh.updateMatrixWorld(true);
             // Scale and center the loaded model
             const box = new THREE.Box3().setFromObject(enemyModelMesh);
