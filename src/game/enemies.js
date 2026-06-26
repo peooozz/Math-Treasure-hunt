@@ -63,14 +63,14 @@ const Enemies = (() => {
         const size = new THREE.Vector3();
         box.getSize(size);
         const maxDim = Math.max(size.x, size.y, size.z);
-        const scaleFactor = 1.6 / maxDim;
+        const scaleFactor = 2.8 / maxDim;
         enemyModelMesh.scale.set(scaleFactor, scaleFactor, scaleFactor);
 
         const center = new THREE.Vector3();
         box.getCenter(center);
         enemyModelMesh.position.set(
             -center.x * scaleFactor,
-            -box.min.y * scaleFactor - 0.25,
+            -box.min.y * scaleFactor - 0.214,
             -center.z * scaleFactor
         );
         enemyModelMesh.rotation.y = Math.PI;
@@ -334,14 +334,14 @@ const Enemies = (() => {
             const size = new THREE.Vector3();
             box.getSize(size);
             const maxDim = Math.max(size.x, size.y, size.z);
-            const scaleFactor = 1.6 / maxDim;
+            const scaleFactor = 2.8 / maxDim;
             enemyModelMesh.scale.set(scaleFactor, scaleFactor, scaleFactor);
 
             const center = new THREE.Vector3();
             box.getCenter(center);
             enemyModelMesh.position.set(
                 -center.x * scaleFactor,
-                -box.min.y * scaleFactor - 0.25,
+                -box.min.y * scaleFactor - 0.214,
                 -center.z * scaleFactor
             );
 
