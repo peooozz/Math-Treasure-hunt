@@ -233,8 +233,8 @@ const GameEngine = (() => {
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
         
-        // Soft Shadow Optimization (Lag Fix)
-        renderer.shadowMap.enabled = true;
+        // Soft Shadow Optimization (Lag Fix - Disabled for 60fps smooth play)
+        renderer.shadowMap.enabled = false;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
         // Sound activation hook
@@ -293,10 +293,10 @@ const GameEngine = (() => {
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
         scene.add(ambientLight);
         
-        // Single optimized shadow-casting DirectionalLight
+        // Single optimized DirectionalLight (Shadows disabled for 60fps)
         const directionalLight = new THREE.DirectionalLight(0xffffff, 0.65);
         directionalLight.position.set(10, 30, 15);
-        directionalLight.castShadow = true;
+        directionalLight.castShadow = false;
         directionalLight.shadow.mapSize.width = 1024;
         directionalLight.shadow.mapSize.height = 1024;
         directionalLight.shadow.camera.near = 0.5;
@@ -305,8 +305,8 @@ const GameEngine = (() => {
         let lightBoundW = halfW;
         let lightBoundD = halfD;
         if (lvl.theme === "arabic_city" || lvl.openWorld) {
-            lightBoundW = 40;
-            lightBoundD = 40;
+            lightBoundW = 80;
+            lightBoundD = 80;
         }
         directionalLight.shadow.camera.left = -lightBoundW - 5;
         directionalLight.shadow.camera.right = lightBoundW + 5;
@@ -426,8 +426,8 @@ const GameEngine = (() => {
 
         // Build procedural structure as initial layout (to support instant loading/hybrid fallback)
         const showFallbackRoom = !lvl.openWorld;
-        const boundW = (lvl.theme === "arabic_city" || lvl.openWorld) ? 40.0 : halfW;
-        const boundD = (lvl.theme === "arabic_city" || lvl.openWorld) ? 40.0 : halfD;
+        const boundW = (lvl.theme === "arabic_city" || lvl.openWorld) ? 80.0 : halfW;
+        const boundD = (lvl.theme === "arabic_city" || lvl.openWorld) ? 80.0 : halfD;
 
         if (showFallbackRoom) {
             // 2. CEILING (y = 20)
@@ -676,7 +676,8 @@ const GameEngine = (() => {
                 model.traverse(child => {
                     if (child.isMesh) {
                         child.castShadow = false;
-                        child.receiveShadow = true;
+                        child.receiveShadow = false;
+                        child.frustumCulled = true;
 
                         const name = child.name.toLowerCase();
 
@@ -688,45 +689,226 @@ const GameEngine = (() => {
                             return;
                         }
 
-                        if (isOpenWorld) {
-                            if (
-                                name.includes('ground') || 
-                                name.includes('terrain') || 
-                                name.includes('plane')
-                            ) {
-                                return;
-                            }
-                        } else {
-                            if (
-                                name.includes('ground') || 
-                                name.includes('floor') || 
-                                name.includes('street') || 
-                                name.includes('road') || 
-                                name.includes('terrain') || 
-                                name.includes('base') || 
-                                name.includes('plane') || 
-                                name.includes('sand')
-                            ) {
-                                return;
-                            }
-                        }
-
-                        // Standard box bounds for all levels (extremely fast and optimized)
+                        // Compute bounding box and center in world coordinates early
                         const meshBox = new THREE.Box3().setFromObject(child);
                         const meshSize = new THREE.Vector3();
                         meshBox.getSize(meshSize);
                         const meshCenter = new THREE.Vector3();
                         meshBox.getCenter(meshCenter);
 
+                        if (isOpenWorld) {
+                            // Hide any mesh in the central walkable zone (within 25m of map center)
+                            // that is not part of the ground/street.
+                            const distFromCenter = Math.sqrt(meshCenter.x * meshCenter.x + meshCenter.z * meshCenter.z);
+                            if (distFromCenter < 25) {
+                                const isGround = name.includes('ground') || name.includes('floor') || name.includes('street') || 
+                                                 name.includes('road') || name.includes('terrain') || name.includes('base') || 
+                                                 name.includes('plane') || name.includes('pavement') || name.includes('sidewalk') ||
+                                                 child.name === 'Object_32' || (meshSize.y < 2.5 && meshBox.min.y < 0.5);
+                                if (!isGround) {
+                                    child.visible = false;
+                                    return;
+                                }
+                            }
+                        }
+
+                        // Aggressively filter all non-building decorative meshes
+                        // to prevent them from becoming solid physics colliders
+                        if (
+                            // Ground / walkable surfaces
+                            name.includes('ground') || 
+                            name.includes('floor') || 
+                            name.includes('street') || 
+                            name.includes('road') || 
+                            name.includes('terrain') || 
+                            name.includes('base') || 
+                            name.includes('plane') || 
+                            name.includes('sand') ||
+                            name.includes('sidewalk') ||
+                            name.includes('path') ||
+                            name.includes('pavement') ||
+                            name.includes('asphalt') ||
+                            name.includes('concrete') ||
+                            name.includes('highway') ||
+                            name.includes('curb') ||
+                            name.includes('gutter') ||
+                            // Metal / glass / decorative material props
+                            name.includes('metal_black') ||
+                            name.includes('metal_gray') ||
+                            name.includes('metal_') ||
+                            name.includes('chrom') ||
+                            name.includes('glass') ||
+                            name.includes('neon') ||
+                            name.includes('light') ||
+                            name.includes('glow') ||
+                            name.includes('emissive') ||
+                            name.includes('led') ||
+                            // Interior / advertising / landscape
+                            name.includes('interior') ||
+                            name.includes('advertising') ||
+                            name.includes('billboard') ||
+                            name.includes('sign') ||
+                            name.includes('banner') ||
+                            name.includes('poster') ||
+                            name.includes('landscape') ||
+                            // Street barriers and structures
+                            name.includes('barrier') ||
+                            name.includes('fence') ||
+                            name.includes('barricade') ||
+                            name.includes('divider') ||
+                            name.includes('railing') ||
+                            name.includes('handrail') ||
+                            name.includes('guardrail') ||
+                            name.includes('bollard') ||
+                            name.includes('gate') ||
+                            // Props / furniture / decoration
+                            name.includes('prop') ||
+                            name.includes('furniture') ||
+                            name.includes('table') ||
+                            name.includes('chair') ||
+                            name.includes('bench') ||
+                            name.includes('stool') ||
+                            name.includes('shelf') ||
+                            name.includes('counter') ||
+                            name.includes('desk') ||
+                            // Poles / lamps / wires / cables
+                            name.includes('pole') ||
+                            name.includes('lamp') ||
+                            name.includes('post') ||
+                            name.includes('wire') ||
+                            name.includes('cable') ||
+                            name.includes('antenna') ||
+                            name.includes('pipe') ||
+                            name.includes('duct') ||
+                            name.includes('vent') ||
+                            // Vegetation
+                            name.includes('tree') ||
+                            name.includes('bush') ||
+                            name.includes('shrub') ||
+                            name.includes('plant') ||
+                            name.includes('leaf') ||
+                            name.includes('grass') ||
+                            name.includes('flower') ||
+                            name.includes('hedge') ||
+                            name.includes('ivy') ||
+                            name.includes('vine') ||
+                            name.includes('foliage') ||
+                            name.includes('pot') ||
+                            name.includes('planter') ||
+                            // Vehicles / transportation
+                            name.includes('car') ||
+                            name.includes('truck') ||
+                            name.includes('bus') ||
+                            name.includes('vehicle') ||
+                            name.includes('bicycle') ||
+                            name.includes('bike') ||
+                            name.includes('motorcycle') ||
+                            name.includes('scooter') ||
+                            name.includes('van') ||
+                            name.includes('wheel') ||
+                            name.includes('tire') ||
+                            // Traffic / signals
+                            name.includes('traffic') ||
+                            name.includes('signal') ||
+                            name.includes('stoplight') ||
+                            name.includes('crosswalk') ||
+                            name.includes('crossing') ||
+                            name.includes('cone') ||
+                            // Street objects / debris
+                            name.includes('bin') ||
+                            name.includes('trash') ||
+                            name.includes('garbage') ||
+                            name.includes('dumpster') ||
+                            name.includes('crate') ||
+                            name.includes('box') ||
+                            name.includes('barrel') ||
+                            name.includes('container') ||
+                            name.includes('bag') ||
+                            // Stairs / platforms / small structures
+                            name.includes('stair') ||
+                            name.includes('step') ||
+                            name.includes('platform') ||
+                            name.includes('ramp') ||
+                            name.includes('ladder') ||
+                            name.includes('scaffold') ||
+                            name.includes('awning') ||
+                            name.includes('canopy') ||
+                            name.includes('overhang') ||
+                            name.includes('balcony') ||
+                            name.includes('porch') ||
+                            // Miscellaneous decorative
+                            name.includes('decor') ||
+                            name.includes('ornament') ||
+                            name.includes('detail') ||
+                            name.includes('trim') ||
+                            name.includes('molding') ||
+                            name.includes('accent') ||
+                            name.includes('cover') ||
+                            name.includes('panel') ||
+                            name.includes('screen') ||
+                            name.includes('curtain') ||
+                            name.includes('flag') ||
+                            name.includes('cloth') ||
+                            name.includes('fabric') ||
+                            name.includes('carpet') ||
+                            name.includes('rug') ||
+                            name.includes('mat') ||
+                            name.includes('drain') ||
+                            name.includes('manhole') ||
+                            name.includes('hydrant') ||
+                            name.includes('mailbox') ||
+                            name.includes('vending') ||
+                            name.includes('phone') ||
+                            name.includes('booth') ||
+                            name.includes('kiosk') ||
+                            name.includes('stand') ||
+                            name.includes('rack') ||
+                            name.includes('hook') ||
+                            name.includes('chain') ||
+                            name.includes('rope') ||
+                            name.includes('window') ||
+                            name.includes('door') ||
+                            name.includes('shutter') ||
+                            name.includes('roof') ||
+                            name.includes('chimney') ||
+                            name.includes('gutter') ||
+                            name.includes('border') ||
+                            name.includes('edge') ||
+                            name.includes('cap') ||
+                            name.includes('tile') ||
+                            name.includes('brick') ||
+                            name.includes('stone') ||
+                            name.includes('rock') ||
+                            name.includes('pebble') ||
+                            name.includes('gravel') ||
+                            name.includes('dirt') ||
+                            name.includes('mud') ||
+                            name.includes('water') ||
+                            name.includes('puddle') ||
+                            name.includes('fountain') ||
+                            name.includes('pool')
+                        ) {
+                            return;
+                        }
+
+                        // Reusing already computed box, size, and center
+
                         const maxLimit = isOpenWorld ? 22 : 35;
-                        const minHeight = isOpenWorld ? 0.5 : 0.25;
-                        const minSize = isOpenWorld ? 2.5 : 0.0;
+                        const minHeight = isOpenWorld ? 3.0 : 0.25;
+                        const minSize = isOpenWorld ? 6.0 : 0.0;
 
                         if (meshSize.y < minHeight || meshSize.x > maxLimit || meshSize.z > maxLimit || meshSize.x < minSize || meshSize.z < minSize) {
                             return;
                         }
 
                         if (isOpenWorld) {
+                            // Skip any mesh in the central walkable zone (within 25m of map center)
+                            // This prevents mid-street props from blocking movement
+                            const distFromCenter = Math.sqrt(meshCenter.x * meshCenter.x + meshCenter.z * meshCenter.z);
+                            if (distFromCenter < 25) {
+                                return;
+                            }
+
                             const spawnX = -halfW + lvl.spawn.x * 4 + 2;
                             const spawnZ = -halfD + lvl.spawn.z * 4 + 2;
                             const exitX = -halfW + lvl.exit.x * 4 + 2;
@@ -790,6 +972,7 @@ const GameEngine = (() => {
 
                         if (isOpenWorld) {
                             buildingFootprints.push({
+                                name: child.name,
                                 x: meshCenter.x,
                                 z: meshCenter.z,
                                 halfW: meshSize.x / 2,
@@ -799,18 +982,62 @@ const GameEngine = (() => {
                     }
                 });
 
+                // Helper to resolve collisions with building footprints for spawn safety
+                function getSafePosition(startX, startZ, margin = 4.0) {
+                    let x = startX;
+                    let z = startZ;
+                    for (let iter = 0; iter < 5; iter++) {
+                        let collided = false;
+                        for (const f of buildingFootprints) {
+                            const minX = f.x - f.halfW;
+                            const maxX = f.x + f.halfW;
+                            const minZ = f.z - f.halfD;
+                            const maxZ = f.z + f.halfD;
+                            if (x >= minX - margin && x <= maxX + margin && 
+                                z >= minZ - margin && z <= maxZ + margin) {
+                                collided = true;
+                                const pushLeft = x - (minX - margin);
+                                const pushRight = (maxX + margin) - x;
+                                const pushBack = z - (minZ - margin);
+                                const pushForward = (maxZ + margin) - z;
+                                const minDist = Math.min(pushLeft, pushRight, pushBack, pushForward);
+                                if (minDist === pushLeft) {
+                                    x = minX - margin;
+                                } else if (minDist === pushRight) {
+                                    x = maxX + margin;
+                                } else if (minDist === pushBack) {
+                                    z = minZ - margin;
+                                } else {
+                                    z = maxZ + margin;
+                                }
+                            }
+                        }
+                        if (!collided) break;
+                    }
+                    return { x, z };
+                }
+
                 // Reset player position once the model is loaded to align with custom environment height
                 const spawnX = -halfW + lvl.spawn.x * 4 + 2;
                 const spawnZ = -halfD + lvl.spawn.z * 4 + 2;
-                const groundHeight = getGroundHeightForPlayer(spawnX, spawnZ);
+                const safeSpawn = getSafePosition(spawnX, spawnZ, 3.0);
+                const groundHeight = getGroundHeightForPlayer(safeSpawn.x, safeSpawn.z);
                 const spawnY = groundHeight + 3.0;
-                Player.reset(new THREE.Vector3(spawnX, spawnY, spawnZ));
+                Player.reset(new THREE.Vector3(safeSpawn.x, spawnY, safeSpawn.z));
 
                 // Initialize Vaults and Enemies ONLY after model is fully loaded!
-                Vaults.init(scene, lvl.vaults, currentLevelIndex);
+                const adjustedVaults = lvl.vaults.map(v => {
+                    const wx = -halfW + v.gridX * 4 + 2;
+                    const wz = -halfD + v.gridZ * 4 + 2;
+                    const safePos = getSafePosition(wx, wz, 3.5);
+                    return { ...v, x: safePos.x, z: safePos.z };
+                });
+                Vaults.init(scene, adjustedVaults, currentLevelIndex);
+                
                 if (lvl.enemies) {
                     lvl.enemies.forEach((enemy, index) => {
-                        Enemies.spawnInsect(enemy.x, 0, enemy.z, enemy.name, index, enemy.hp);
+                        const safePos = getSafePosition(enemy.x, enemy.z, 3.0);
+                        Enemies.spawnInsect(safePos.x, 0, safePos.z, enemy.name, index, enemy.hp);
                     });
                 }
             };
@@ -1324,14 +1551,19 @@ const GameEngine = (() => {
         return {
             grid: lvl.grid,
             openWorld: !!lvl.openWorld,
-            boundSize: lvl.openWorld ? 40.0 : ((lvl.grid[0].length * 4) / 2),
+            boundSize: lvl.openWorld ? 80.0 : ((lvl.grid[0].length * 4) / 2),
             buildingFootprints: buildingFootprints,
             playerPos: Player.getPosition(),
             enemies: Enemies.getActiveEnemies ? Enemies.getActiveEnemies() : [],
             vaults: Vaults.getActiveVaults ? Vaults.getActiveVaults() : [],
             portalActive,
             portalCell,
-            yaw: camera ? camera.rotation.y : 0
+            yaw: (() => {
+                if (!camera) return 0;
+                const dir = new THREE.Vector3();
+                camera.getWorldDirection(dir);
+                return Math.atan2(dir.x, -dir.z);
+            })()
         };
     }
 

@@ -218,8 +218,8 @@ const Vaults = (() => {
         const halfD = (gridRows * 4) / 2;
         
         levelVaults.forEach(v => {
-            const worldX = -halfW + v.gridX * 4 + 2;
-            const worldZ = -halfD + v.gridZ * 4 + 2;
+            const worldX = v.x !== undefined ? v.x : (-halfW + v.gridX * 4 + 2);
+            const worldZ = v.z !== undefined ? v.z : (-halfD + v.gridZ * 4 + 2);
             const color = getColorForType(v.type);
             let groundY = 0;
             if (lvl && lvl.modelPath) {

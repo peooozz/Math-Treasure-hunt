@@ -213,7 +213,11 @@ export const LEVELS = [
         enemies: [
             { x: -16, z: -16, hp: 90, name: "VOLUME NEIGHBOR GUARD" },
             { x: 16, z: -12, hp: 90, name: "PROBABILITY NEIGHBOR GUARD" },
-            { x: -8, z: 20, hp: 100, name: "POLYNOMIAL NEIGHBOR GUARD" }
+            { x: -8, z: 20, hp: 100, name: "POLYNOMIAL NEIGHBOR GUARD" },
+            { x: -5, z: -5, hp: 95, name: "FRACTION GUARD" },
+            { x: 10, z: -5, hp: 95, name: "MIXED NUMBER GUARD" },
+            { x: -5, z: 15, hp: 100, name: "MEASUREMENT GUARD" },
+            { x: 10, z: 15, hp: 100, name: "MONEY GUARD" }
         ],
         vaults: [
             {
@@ -258,6 +262,62 @@ export const LEVELS = [
                 defaultVal: 3,
                 ans: 5,
                 formula: "Sum of zeroes = -b/a = -(-15)/3 = 5."
+            },
+            {
+                id: 3,
+                name: "Fraction Workshop",
+                concept: "Fractions",
+                gridX: 5,
+                gridZ: 5,
+                type: "algebra",
+                problem: "Add, subtract, simplify, and compare fractions.",
+                label: "Fraction",
+                min: 0,
+                max: 10,
+                defaultVal: 1,
+                ans: 0
+            },
+            {
+                id: 4,
+                name: "Mixed Number Lab",
+                concept: "Mixed Numbers",
+                gridX: 9,
+                gridZ: 5,
+                type: "algebra",
+                problem: "Convert between improper fractions and mixed numbers.",
+                label: "Mixed Number",
+                min: 0,
+                max: 20,
+                defaultVal: 1,
+                ans: 0
+            },
+            {
+                id: 5,
+                name: "Measurement Station",
+                concept: "Measurement",
+                gridX: 5,
+                gridZ: 10,
+                type: "algebra",
+                problem: "Convert between units of measurement (cm, m, kg, g, L, mL, km).",
+                label: "Value",
+                min: 0,
+                max: 100,
+                defaultVal: 1,
+                ans: 0
+            },
+            {
+                id: 6,
+                name: "Money Market",
+                concept: "Money",
+                gridX: 9,
+                gridZ: 10,
+                type: "algebra",
+                problem: "Calculate total costs, change, discounts, and more.",
+                label: "Amount",
+                min: 0,
+                max: 500,
+                defaultVal: 50,
+                ans: 0
             }
         ]
     }

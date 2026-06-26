@@ -4,6 +4,7 @@ import Vaults from './game/vaults';
 import Player from './game/player';
 import { Sound } from './game/sound';
 import { LEVELS } from './game/levels';
+import { generateQuestions } from './game/mathQuestions';
 import './App.css';
 
 const LEVEL_CARDS_DATA = [
@@ -32,309 +33,17 @@ const LEVEL_CARDS_DATA = [
     { 
         id: 3, 
         name: "Level 3: Neighborhood City", 
-        concept: "Spherical Volumes & Probability", 
+        concept: "Volumes, Probability, Fractions, Money & More", 
         diff: "Medium", 
         color: "#a855f7", 
         icon: "🏙️", 
         difficultyProgress: 100,
-        formulaText: "V = 4/3*πr³ & P(E) = n(E)/n(S)",
-        formulaDesc: "Determine volume of spherical reactor shields. Compute the probability of drawing red/black objects, and sum of zeroes."
+        formulaText: "V = 4/3*πr³, P(E), a/b, Mixed Nos, ₹",
+        formulaDesc: "7 treasure vaults: Volumes, Probability, Polynomials, Fractions, Mixed Numbers, Measurement conversions, and Money math."
     }
 ];
 
-const LEVEL1_PUZZLES_DATA = {
-    // Treasure 1 (Vault ID 0): Ascending sort
-    0: [
-        {
-            type: "sort",
-            numbers: [12, 5, 23, 9],
-            correct: [5, 9, 12, 23],
-            instruction: "Arrange the numbers in ASCENDING order (from smallest to biggest! 📈)"
-        },
-        {
-            type: "sort",
-            numbers: [45, 17, 8, 31],
-            correct: [8, 17, 31, 45],
-            instruction: "Super! Now arrange these from smallest to biggest! 📈"
-        },
-        {
-            type: "sort",
-            numbers: [99, 14, 52, 67],
-            correct: [14, 52, 67, 99],
-            instruction: "Last one! Sort these numbers in ascending order! 📈"
-        }
-    ],
-    // Treasure 2 (Vault ID 1): Descending sort
-    1: [
-        {
-            type: "sort",
-            numbers: [15, 3, 42, 28],
-            correct: [42, 28, 15, 3],
-            instruction: "Arrange the numbers in DESCENDING order (from biggest to smallest! 📉)"
-        },
-        {
-            type: "sort",
-            numbers: [60, 88, 12, 54],
-            correct: [88, 60, 54, 12],
-            instruction: "Awesome! Arrange these from biggest to smallest! 📉"
-        },
-        {
-            type: "sort",
-            numbers: [5, 91, 33, 72],
-            correct: [91, 72, 33, 5],
-            instruction: "Great job! One more time: sort from biggest to smallest! 📉"
-        }
-    ],
-    // Treasure 3 (Vault ID 2): Comparing Numbers (5 questions)
-    2: [
-        {
-            type: "equation",
-            template: ["12", "SLOT", "18"],
-            options: ["<", ">", "="],
-            correct: "<",
-            instruction: "Which symbol fits? Is 12 smaller than, larger than, or equal to 18? 🤔"
-        },
-        {
-            type: "equation",
-            template: ["45", "SLOT", "21"],
-            options: ["<", ">", "="],
-            correct: ">",
-            instruction: "Compare these numbers! Is 45 smaller than, larger than, or equal to 21? 🤔"
-        },
-        {
-            type: "equation",
-            template: ["30", "SLOT", "30"],
-            options: ["<", ">", "="],
-            correct: "=",
-            instruction: "Look closely! Is 30 smaller than, larger than, or equal to 30? 🤔"
-        },
-        {
-            type: "equation",
-            template: ["8", "SLOT", "88"],
-            options: ["<", ">", "="],
-            correct: "<",
-            instruction: "Comparing numbers! Is 8 smaller than, larger than, or equal to 88? 🤔"
-        },
-        {
-            type: "equation",
-            template: ["97", "SLOT", "79"],
-            options: ["<", ">", "="],
-            correct: ">",
-            instruction: "Final comparison! Is 97 smaller than, larger than, or equal to 79? 🤔"
-        }
-    ]
-};
-
-const LEVEL2_PUZZLES_DATA = {
-    // Treasure 1 (Vault ID 0): Addition (7 questions)
-    0: [
-        {
-            type: "equation",
-            template: ["5", "+", "3", "=", "SLOT"],
-            options: ["7", "8", "9", "10"],
-            correct: "8",
-            instruction: "Solve the puzzle: What is 5 + 3? ➕"
-        },
-        {
-            type: "equation",
-            template: ["12", "+", "SLOT", "=", "15"],
-            options: ["2", "3", "4", "5"],
-            correct: "3",
-            instruction: "Fill in the blank: 12 + ? = 15 ➕"
-        },
-        {
-            type: "equation",
-            template: ["SLOT", "+", "6", "=", "14"],
-            options: ["7", "8", "9", "10"],
-            correct: "8",
-            instruction: "Find the missing number! ? + 6 = 14 ➕"
-        },
-        {
-            type: "equation",
-            template: ["9", "+", "7", "=", "SLOT"],
-            options: ["15", "16", "17", "18"],
-            correct: "16",
-            instruction: "What is 9 + 7? Add them up! ➕"
-        },
-        {
-            type: "equation",
-            template: ["SLOT", "+", "5", "=", "11"],
-            options: ["4", "5", "6", "7"],
-            correct: "6",
-            instruction: "What number plus 5 equals 11? ➕"
-        },
-        {
-            type: "equation",
-            template: ["8", "+", "SLOT", "=", "17"],
-            options: ["7", "8", "9", "10"],
-            correct: "9",
-            instruction: "Complete the sum: 8 + ? = 17 ➕"
-        },
-        {
-            type: "equation",
-            template: ["14", "+", "5", "=", "SLOT"],
-            options: ["17", "18", "19", "20"],
-            correct: "19",
-            instruction: "Last addition! What is 14 + 5? ➕"
-        }
-    ],
-    // Treasure 2 (Vault ID 1): Subtraction (7 questions)
-    1: [
-        {
-            type: "equation",
-            template: ["9", "-", "4", "=", "SLOT"],
-            options: ["3", "4", "5", "6"],
-            correct: "5",
-            instruction: "Subtract the numbers: What is 9 - 4? ➖"
-        },
-        {
-            type: "equation",
-            template: ["15", "-", "SLOT", "=", "10"],
-            options: ["3", "4", "5", "6"],
-            correct: "5",
-            instruction: "Find the missing number: 15 - ? = 10 ➖"
-        },
-        {
-            type: "equation",
-            template: ["SLOT", "-", "3", "=", "8"],
-            options: ["9", "10", "11", "12"],
-            correct: "11",
-            instruction: "What number minus 3 equals 8? ➖"
-        },
-        {
-            type: "equation",
-            template: ["12", "-", "7", "=", "SLOT"],
-            options: ["4", "5", "6", "7"],
-            correct: "5",
-            instruction: "Take away 7 from 12! What is left? ➖"
-        },
-        {
-            type: "equation",
-            template: ["SLOT", "-", "6", "=", "4"],
-            options: ["8", "9", "10", "11"],
-            correct: "10",
-            instruction: "Fill in the blank: ? - 6 = 4 ➖"
-        },
-        {
-            type: "equation",
-            template: ["18", "-", "SLOT", "=", "9"],
-            options: ["7", "8", "9", "10"],
-            correct: "9",
-            instruction: "Subtract to find the slot: 18 - ? = 9 ➖"
-        },
-        {
-            type: "equation",
-            template: ["20", "-", "8", "=", "SLOT"],
-            options: ["10", "11", "12", "13"],
-            correct: "12",
-            instruction: "Last subtraction! What is 20 - 8? ➖"
-        }
-    ],
-    // Treasure 3 (Vault ID 2): Multiplication (7 questions)
-    2: [
-        {
-            type: "equation",
-            template: ["3", "*", "2", "=", "SLOT"],
-            options: ["4", "5", "6", "8"],
-            correct: "6",
-            instruction: "Let's multiply! What is 3 times 2? ✖️"
-        },
-        {
-            type: "equation",
-            template: ["5", "*", "SLOT", "=", "15"],
-            options: ["2", "3", "4", "5"],
-            correct: "3",
-            instruction: "Complete the equation: 5 times what is 15? ✖️"
-        },
-        {
-            type: "equation",
-            template: ["SLOT", "*", "4", "=", "16"],
-            options: ["2", "3", "4", "5"],
-            correct: "4",
-            instruction: "What number times 4 is 16? ✖️"
-        },
-        {
-            type: "equation",
-            template: ["2", "*", "7", "=", "SLOT"],
-            options: ["12", "14", "16", "18"],
-            correct: "14",
-            instruction: "Multiply 2 by 7! ✖️"
-        },
-        {
-            type: "equation",
-            template: ["SLOT", "*", "3", "=", "18"],
-            options: ["5", "6", "7", "8"],
-            correct: "6",
-            instruction: "Fill in the missing factor: ? * 3 = 18 ✖️"
-        },
-        {
-            type: "equation",
-            template: ["9", "*", "SLOT", "=", "18"],
-            options: ["1", "2", "3", "4"],
-            correct: "2",
-            instruction: "Solve the product: 9 * ? = 18 ✖️"
-        },
-        {
-            type: "equation",
-            template: ["4", "*", "5", "=", "SLOT"],
-            options: ["15", "18", "20", "22"],
-            correct: "20",
-            instruction: "Last multiplication! What is 4 * 5? ✖️"
-        }
-    ],
-    // Treasure 4 (Vault ID 3): Division (7 questions)
-    3: [
-        {
-            type: "equation",
-            template: ["6", "/", "2", "=", "SLOT"],
-            options: ["2", "3", "4", "5"],
-            correct: "3",
-            instruction: "Let's divide! What is 6 shared into 2 groups? ➗"
-        },
-        {
-            type: "equation",
-            template: ["10", "/", "SLOT", "=", "2"],
-            options: ["3", "4", "5", "6"],
-            correct: "5",
-            instruction: "Find the divisor: 10 divided by what equals 2? ➗"
-        },
-        {
-            type: "equation",
-            template: ["SLOT", "/", "3", "=", "4"],
-            options: ["8", "10", "12", "14"],
-            correct: "12",
-            instruction: "What number divided by 3 is 4? ➗"
-        },
-        {
-            type: "equation",
-            template: ["15", "/", "5", "=", "SLOT"],
-            options: ["2", "3", "4", "5"],
-            correct: "3",
-            instruction: "Divide 15 by 5! ➗"
-        },
-        {
-            type: "equation",
-            template: ["SLOT", "/", "2", "=", "8"],
-            options: ["12", "14", "16", "18"],
-            correct: "16",
-            instruction: "Fill in the blank: ? / 2 = 8 ➗"
-        },
-        {
-            type: "equation",
-            template: ["18", "/", "SLOT", "=", "6"],
-            options: ["2", "3", "4", "5"],
-            correct: "3",
-            instruction: "Solve the divisor: 18 / ? = 6 ➗"
-        },
-        {
-            type: "equation",
-            template: ["20", "/", "4", "=", "SLOT"],
-            options: ["4", "5", "6", "7"],
-            correct: "5",
-            instruction: "Last division! What is 20 / 4? ➗"
-        }
-    ]
-};
+// Puzzle data is now generated dynamically by mathQuestions.js
 
 const PLAYFUL_COLORS = ['#ff4757', '#2ed573', '#1e90ff', '#ffa502', '#ff6b81', '#70a1ff', '#7bed9f'];
 
@@ -353,7 +62,7 @@ function App() {
     let puzzleCanvasRef;
     let minimapRef;
 
-    const activeLevelPuzzles = () => level() === 1 ? LEVEL1_PUZZLES_DATA : LEVEL2_PUZZLES_DATA;
+    const activeLevelPuzzles = () => generatedPuzzles();
 
     // Menu Signals
     const [gameStarted, setGameStarted] = createSignal(false);
@@ -375,12 +84,16 @@ function App() {
     const [isLocked, setIsLocked] = createSignal(false);
     const [mousePos, setMousePos] = createSignal({ x: 0, y: 0 });
 
-    // Level 1 Comic Puzzle signals
+    // Dynamic puzzle data (generated fresh for each vault open)
+    const [generatedPuzzles, setGeneratedPuzzles] = createSignal({});
+
+    // Comic Puzzle signals
     const [lvl1QuestionIdx, setLvl1QuestionIdx] = createSignal(0);
     const [lvl1Items, setLvl1Items] = createSignal([]);
     const [lvl1Slots, setLvl1Slots] = createSignal([]);
     const [selectedCard, setSelectedCard] = createSignal(null);
     const [isDragOver, setIsDragOver] = createSignal(false);
+    const [floatingParticles, setFloatingParticles] = createSignal([]);
 
     const handlePrevLevel = () => {
         setActiveLevelIndex((prev) => (prev > 0 ? prev - 1 : LEVEL_CARDS_DATA.length - 1));
@@ -470,10 +183,11 @@ function App() {
                     GameEngine.getControls().unlock();
                 }
 
-                if (level() === 1 || level() === 2) {
-                    setLvl1QuestionIdx(0);
-                    initLevel1Puzzle(vault.id, 0);
-                }
+                // Generate 10 fresh random questions for this vault
+                const questions = generateQuestions(level(), vault.id, 10);
+                setGeneratedPuzzles(prev => ({ ...prev, [vault.id]: questions }));
+                setLvl1QuestionIdx(0);
+                initLevel1Puzzle(vault.id, 0);
             },
             onGameOver: () => setGameOver(true),
             onVictory: () => setVictory(true),
@@ -562,7 +276,7 @@ function App() {
             const portalStatusEl = document.getElementById('nav-portal-status');
 
             if (headingEl) {
-                let deg = (-yaw * 180 / Math.PI) % 360;
+                let deg = (yaw * 180 / Math.PI) % 360;
                 if (deg < 0) deg += 360;
                 
                 let dir = "N";
@@ -627,11 +341,8 @@ function App() {
                 };
             };
 
-            const bgGradient = ctx.createRadialGradient(cx, cy, 10, cx, cy, mapRadius);
-            bgGradient.addColorStop(0, '#0a101d');
-            bgGradient.addColorStop(0.8, '#05080f');
-            bgGradient.addColorStop(1, '#020408');
-            ctx.fillStyle = bgGradient;
+            // Comic Book Style Radar Background
+            ctx.fillStyle = '#f8fafc';
             ctx.fillRect(0, 0, cw, ch);
             
             ctx.save();
@@ -639,8 +350,9 @@ function App() {
             ctx.arc(cx, cy, mapRadius, 0, Math.PI * 2);
             ctx.clip();
             
-            ctx.strokeStyle = 'rgba(0, 240, 255, 0.07)';
-            ctx.lineWidth = 0.8;
+            // Clean gray grid lines
+            ctx.strokeStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.lineWidth = 1.0;
             const gridStep = openWorld ? 10 : 4;
             for (let gx = -Math.ceil(mapRange/gridStep)*gridStep; gx <= mapRange; gx += gridStep) {
                 const a = worldToMinimap(gx, -mapRange);
@@ -653,8 +365,9 @@ function App() {
                 ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
             }
 
-            ctx.strokeStyle = 'rgba(0, 240, 255, 0.05)';
-            ctx.lineWidth = 1.0;
+            // Radar concentric rings
+            ctx.strokeStyle = 'rgba(0, 0, 0, 0.04)';
+            ctx.lineWidth = 1.2;
             ctx.beginPath();
             ctx.arc(cx, cy, mapRadius * 0.33, 0, Math.PI * 2);
             ctx.stroke();
@@ -662,12 +375,13 @@ function App() {
             ctx.arc(cx, cy, mapRadius * 0.66, 0, Math.PI * 2);
             ctx.stroke();
 
+            // Subtle scan sweep line
             const sweepAngle = (performance.now() * 0.0012) % (Math.PI * 2);
             ctx.beginPath();
             ctx.moveTo(cx, cy);
             ctx.lineTo(cx + Math.cos(sweepAngle) * mapRadius, cy + Math.sin(sweepAngle) * mapRadius);
-            ctx.strokeStyle = 'rgba(0, 240, 255, 0.12)';
-            ctx.lineWidth = 1.2;
+            ctx.strokeStyle = 'rgba(0, 0, 0, 0.06)';
+            ctx.lineWidth = 1.5;
             ctx.stroke();
 
             const halfW = (cols * 4) / 2;
@@ -681,64 +395,62 @@ function App() {
                             const wx = -halfW + c * 4 + 2;
                             const wz = -halfD + r * 4 + 2;
                             const tl = worldToMinimap(wx - 2, wz - 2);
-                            const tr = worldToMinimap(wx + 2, wz - 2);
                             const br = worldToMinimap(wx + 2, wz + 2);
-                            const bl = worldToMinimap(wx - 2, wz + 2);
                             
-                            ctx.fillStyle = cell === 1 ? 'rgba(255, 0, 122, 0.35)' : 'rgba(168, 85, 247, 0.4)';
-                            ctx.beginPath();
-                            ctx.moveTo(tl.x, tl.y);
-                            ctx.lineTo(tr.x, tr.y);
-                            ctx.lineTo(br.x, br.y);
-                            ctx.lineTo(bl.x, bl.y);
-                            ctx.closePath();
-                            ctx.fill();
+                            ctx.fillStyle = cell === 1 ? 'rgba(0, 0, 0, 0.15)' : 'rgba(234, 179, 8, 0.35)';
+                            ctx.fillRect(tl.x, tl.y, br.x - tl.x, br.y - tl.y);
                             
-                            ctx.strokeStyle = cell === 1 ? 'rgba(255, 0, 122, 0.6)' : 'rgba(168, 85, 247, 0.7)';
-                            ctx.lineWidth = 0.5;
-                            ctx.stroke();
+                            ctx.strokeStyle = '#000000';
+                            ctx.lineWidth = 1.5;
+                            ctx.strokeRect(tl.x, tl.y, br.x - tl.x, br.y - tl.y);
                         }
                     }
+                }
+            } else {
+                if (footprints) {
+                    ctx.save();
+                    footprints.forEach(f => {
+                        const tl = worldToMinimap(f.x - f.halfW, f.z - f.halfD);
+                        const br = worldToMinimap(f.x + f.halfW, f.z + f.halfD);
+                        const w = br.x - tl.x;
+                        const h = br.y - tl.y;
+                        
+                        ctx.fillStyle = '#ffe600'; // Bold comic yellow for buildings
+                        ctx.fillRect(tl.x, tl.y, w, h);
+                        
+                        ctx.strokeStyle = '#000000'; // Thick black borders
+                        ctx.lineWidth = 2.0;
+                        ctx.strokeRect(tl.x, tl.y, w, h);
+                    });
+                    ctx.restore();
                 }
             }
             
             vaults.forEach(v => {
                 if (v.unlocked) return;
                 const pos = worldToMinimap(v.position.x, v.position.z);
-                const pulse = 1.0 + Math.sin(performance.now() * 0.008 + v.id) * 0.25;
-                ctx.save();
-                ctx.shadowColor = v.opened ? '#39ff14' : '#bd00ff';
-                ctx.shadowBlur = 6;
-                ctx.beginPath();
-                ctx.arc(pos.x, pos.y, 4.5, 0, Math.PI * 2);
-                ctx.fillStyle = v.opened ? '#39ff14' : '#bd00ff';
-                ctx.fill();
-                ctx.restore();
+                const pulse = 1.0 + Math.sin(performance.now() * 0.008 + v.id) * 0.18;
                 
                 ctx.beginPath();
-                ctx.arc(pos.x, pos.y, 8.0 * pulse, 0, Math.PI * 2);
-                ctx.strokeStyle = v.opened ? 'rgba(57, 255, 20, 0.35)' : 'rgba(189, 0, 255, 0.35)';
-                ctx.lineWidth = 1;
+                ctx.arc(pos.x, pos.y, 5.5 * pulse, 0, Math.PI * 2);
+                ctx.fillStyle = v.opened ? '#22c55e' : '#a855f7'; // green vs purple
+                ctx.fill();
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 1.8;
                 ctx.stroke();
             });
             
             enemies.forEach((e, idx) => {
                 if (e.dead) return;
                 const pos = worldToMinimap(e.mesh.position.x, e.mesh.position.z);
-                const pulse = 1.0 + Math.sin(performance.now() * 0.01 + idx) * 0.22;
-                ctx.save();
-                ctx.shadowColor = '#ef4444';
-                ctx.shadowBlur = 6;
-                ctx.beginPath();
-                ctx.arc(pos.x, pos.y, 3.5, 0, Math.PI * 2);
-                ctx.fillStyle = '#ef4444';
-                ctx.fill();
-                ctx.restore();
+                const pulse = 1.0 + Math.sin(performance.now() * 0.01 + idx) * 0.15;
                 
                 ctx.beginPath();
-                ctx.arc(pos.x, pos.y, 6.5 * pulse, 0, Math.PI * 2);
-                ctx.strokeStyle = 'rgba(239, 68, 68, 0.38)';
-                ctx.lineWidth = 1;
+                ctx.arc(pos.x, pos.y, 4.5 * pulse, 0, Math.PI * 2);
+                ctx.fillStyle = '#ff2a5f'; // comic pink/red
+                ctx.fill();
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 1.8;
                 ctx.stroke();
             });
             
@@ -746,20 +458,13 @@ function App() {
                 const portalWorldX = -halfW + portalCell.x * 4 + 2;
                 const portalWorldZ = -halfD + portalCell.z * 4 + 2;
                 const pos = worldToMinimap(portalWorldX, portalWorldZ);
-                const pulse = 1.0 + Math.sin(performance.now() * 0.012) * 0.28;
-                ctx.save();
-                ctx.shadowColor = '#00f0ff';
-                ctx.shadowBlur = 6;
+                
                 ctx.beginPath();
-                ctx.arc(pos.x, pos.y, 5.5, 0, Math.PI * 2);
-                ctx.fillStyle = '#00f0ff';
+                ctx.arc(pos.x, pos.y, 6.5, 0, Math.PI * 2);
+                ctx.fillStyle = '#00f0ff'; // cyber cyan exit
                 ctx.fill();
-                ctx.restore();
- 
-                ctx.beginPath();
-                ctx.arc(pos.x, pos.y, 10.0 * pulse, 0, Math.PI * 2);
-                ctx.strokeStyle = 'rgba(0, 240, 255, 0.7)';
-                ctx.lineWidth = 1.2;
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 2.0;
                 ctx.stroke();
             }
             
@@ -767,46 +472,40 @@ function App() {
             
             ctx.save();
             ctx.translate(pPos.x, pPos.y);
-            ctx.rotate(-yaw);
+            ctx.rotate(yaw); // Rotate by positive yaw from camera world direction vector
             
             ctx.beginPath();
             ctx.moveTo(0, 0);
-            ctx.arc(0, 0, 32, -Math.PI / 2 - 0.35, -Math.PI / 2 + 0.35);
+            ctx.arc(0, 0, 36, -Math.PI / 2 - 0.45, -Math.PI / 2 + 0.45);
             ctx.closePath();
-            const fovGradient = ctx.createRadialGradient(0, 0, 2, 0, 0, 32);
-            fovGradient.addColorStop(0, 'rgba(57, 255, 20, 0.45)');
-            fovGradient.addColorStop(1, 'rgba(57, 255, 20, 0)');
+            const fovGradient = ctx.createRadialGradient(0, 0, 2, 0, 0, 36);
+            fovGradient.addColorStop(0, 'rgba(34, 197, 94, 0.4)');
+            fovGradient.addColorStop(1, 'rgba(34, 197, 94, 0)');
             ctx.fillStyle = fovGradient;
             ctx.fill();
  
             ctx.beginPath();
-            ctx.moveTo(0, -7);
-            ctx.lineTo(-5, 5);
-            ctx.lineTo(5, 5);
+            ctx.moveTo(0, -9);
+            ctx.lineTo(-6, 6);
+            ctx.lineTo(6, 6);
             ctx.closePath();
-            ctx.fillStyle = '#39ff14';
-            ctx.shadowColor = '#39ff14';
-            ctx.shadowBlur = 8;
+            ctx.fillStyle = '#22c55e'; // bright comic green arrow
             ctx.fill();
-            ctx.strokeStyle = '#ffffff';
-            ctx.lineWidth = 1.2;
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 2.0;
             ctx.stroke();
-            ctx.shadowBlur = 0;
             
             ctx.restore();
             ctx.restore();
             
-            ctx.save();
-            ctx.shadowColor = 'rgba(0, 240, 255, 0.6)';
-            ctx.shadowBlur = 8;
+            // Bold outer comic bezel
             ctx.beginPath();
             ctx.arc(cx, cy, mapRadius, 0, Math.PI * 2);
-            ctx.strokeStyle = 'rgba(0, 240, 255, 0.6)';
-            ctx.lineWidth = 1.8;
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 3.5;
             ctx.stroke();
-            ctx.restore();
             
-            ctx.font = 'bold 9px Orbitron, monospace';
+            ctx.font = 'bold 12px Bangers, cursive';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             const compassDirs = [
@@ -818,7 +517,7 @@ function App() {
             compassDirs.forEach(d => {
                 const lx = cx + Math.sin(d.angle) * (mapRadius + 8);
                 const ly = cy - Math.cos(d.angle) * (mapRadius + 8);
-                ctx.fillStyle = d.label === 'N' ? '#ef4444' : 'rgba(148, 163, 184, 0.8)';
+                ctx.fillStyle = d.label === 'N' ? '#ef4444' : '#000000';
                 ctx.fillText(d.label, lx, ly);
             });
         };
@@ -1055,6 +754,23 @@ function App() {
 
         if (isCorrect) {
             Sound.playVictory();
+
+            // Trigger particle burst
+            const particles = [];
+            for (let i = 0; i < 25; i++) {
+                particles.push({
+                    id: Math.random(),
+                    x: Math.random() * 80 + 10,
+                    y: Math.random() * 30 + 50,
+                    symbol: ['⭐', '✨', '🎉', '💥', '✏️', '➕', '➖', '➗', '✖️', '💡'][Math.floor(Math.random() * 10)],
+                    size: Math.random() * 1.5 + 1.2,
+                    delay: Math.random() * 0.4,
+                    duration: Math.random() * 1.0 + 1.0
+                });
+            }
+            setFloatingParticles(particles);
+            setTimeout(() => setFloatingParticles([]), 2500);
+
             if (questionIdx < activeLevelPuzzles()[vaultId].length - 1) {
                 setPuzzleFeedback("Awesome! You got it right! Ready for the next one? 🌟");
                 setPuzzleFeedbackType("success");
@@ -1076,6 +792,7 @@ function App() {
                 }, 1800);
             }
         } else {
+            Sound.playDamage();
             setPuzzleFeedback("Oops! That's not correct. Let's try again! 💪");
             setPuzzleFeedbackType("error");
             setShakeOverlay(true);
@@ -1201,6 +918,24 @@ function App() {
         }
 
         if (isCorrect) {
+            Sound.playVictory();
+
+            // Trigger particle burst
+            const particles = [];
+            for (let i = 0; i < 25; i++) {
+                particles.push({
+                    id: Math.random(),
+                    x: Math.random() * 80 + 10,
+                    y: Math.random() * 30 + 50,
+                    symbol: ['⭐', '✨', '🎉', '💥', '✏️', '➕', '➖', '➗', '✖️', '💡'][Math.floor(Math.random() * 10)],
+                    size: Math.random() * 1.5 + 1.2,
+                    delay: Math.random() * 0.4,
+                    duration: Math.random() * 1.0 + 1.0
+                });
+            }
+            setFloatingParticles(particles);
+            setTimeout(() => setFloatingParticles([]), 2500);
+
             setPuzzleFeedback("VAULT SECURED! UNLOCKING CORE...");
             setPuzzleFeedbackType("success");
             
@@ -1214,6 +949,7 @@ function App() {
                 }
             }, 1500);
         } else {
+            Sound.playDamage();
             setPuzzleFeedback(errMsg || "Verification Failed. Decryption Error.");
             setPuzzleFeedbackType("error");
             
@@ -1413,24 +1149,7 @@ function App() {
                 <div id="hud" class={gravityInverted() ? 'gravity-inverted' : ''}>
                     {/* Top Center Pause Control */}
                     <button 
-                        class="hud-pause-btn font-orbitron" 
-                        style={{ 
-                            'pointer-events': 'auto',
-                            position: 'absolute',
-                            top: '20px',
-                            left: '50%',
-                            transform: 'translateX(-50%)',
-                            'z-index': 100,
-                            background: 'var(--bg-glass)',
-                            border: '1px solid var(--border-glass)',
-                            color: 'var(--color-primary)',
-                            'text-shadow': 'var(--glow-cyan)',
-                            padding: '8px 16px',
-                            'border-radius': '4px',
-                            cursor: 'pointer',
-                            'font-weight': 'bold',
-                            'font-size': '0.85rem'
-                        }}
+                        class="hud-pause-btn" 
                         onClick={handlePauseToggle}
                     >
                         {isPaused() ? '▶ RESUME' : '⏸ PAUSE'}
@@ -1459,10 +1178,24 @@ function App() {
                         </div>
                     </div>
 
-                    {/* Right HUD Panel (Minimap Only) */}
+                    {/* Right HUD Panel */}
                     <div class="hud-panel right-panel">
                         <div class="minimap-container">
                             <canvas ref={minimapRef} width="180" height="180" id="minimap-canvas"></canvas>
+                        </div>
+                        <div class="minimap-stats" style={{ width: '100%', 'display': 'flex', 'flex-direction': 'column', gap: '8px', 'align-items': 'stretch', 'margin-top': '5px' }}>
+                            <div class="stat-row" style={{ 'justify-content': 'space-between', 'width': '100%' }}>
+                                <span class="stat-label">HEADING</span>
+                                <span id="nav-heading" class="stat-value text-gold">--</span>
+                            </div>
+                            <div class="stat-row" style={{ 'justify-content': 'space-between', 'width': '100%' }}>
+                                <span class="stat-label">NEAR CHEST</span>
+                                <span id="nav-nearest-vault" class="stat-value text-gold">--</span>
+                            </div>
+                            <div class="stat-row" style={{ 'justify-content': 'space-between', 'width': '100%' }}>
+                                <span class="stat-label">EXIT PORTAL</span>
+                                <span id="nav-portal-status" class="stat-value">OFFLINE</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1519,16 +1252,43 @@ function App() {
                     const puzzle = activePuzzle();
                     return (
                         <div id="puzzle-overlay" class="overlay-screen active">
-                            <Show when={level() === 1 || level() === 2} fallback={
+                            <For each={floatingParticles()}>
+                                {(p) => (
+                                    <span 
+                                        class="comic-floating-particle"
+                                        style={{
+                                            left: `${p.x}%`,
+                                            top: `${p.y}%`,
+                                            'font-size': `${p.size}rem`,
+                                            'animation-delay': `${p.delay}s`,
+                                            'animation-duration': `${p.duration}s`
+                                        }}
+                                    >
+                                        {p.symbol}
+                                    </span>
+                                )}
+                            </For>
+                            <Show when={true} fallback={
                                 <div class={`puzzle-container comic-popup comic-popup-puzzle ${shakeOverlay() ? 'shake' : ''}`}>
+                                    {/* Decorative Background Numbers */}
+                                    <div class="comic-bg-numbers-container">
+                                        <span class="comic-bg-num" style={{ top: '10%', left: '8%', 'font-size': '2rem', 'animation-delay': '0s' }}>5</span>
+                                        <span class="comic-bg-num" style={{ top: '25%', right: '12%', 'font-size': '3rem', 'animation-delay': '1s' }}>9</span>
+                                        <span class="comic-bg-num" style={{ top: '65%', left: '15%', 'font-size': '2.5rem', 'animation-delay': '2s' }}>3</span>
+                                        <span class="comic-bg-num" style={{ top: '75%', right: '8%', 'font-size': '1.8rem', 'animation-delay': '1.5s' }}>7</span>
+                                        <span class="comic-bg-num" style={{ top: '45%', left: '85%', 'font-size': '2.2rem', 'animation-delay': '0.5s' }}>4</span>
+                                        <span class="comic-bg-num" style={{ top: '80%', left: '50%', 'font-size': '2.8rem', 'animation-delay': '2.5s' }}>2</span>
+                                        <span class="comic-bg-num" style={{ top: '5%', right: '35%', 'font-size': '2.4rem', 'animation-delay': '3s' }}>8</span>
+                                        <span class="comic-bg-num" style={{ top: '55%', left: '30%', 'font-size': '2.1rem', 'animation-delay': '0.8s' }}>6</span>
+                                    </div>
                                     
                                     {/* Sidebar controls */}
                                     <div class="puzzle-sidebar">
                                         <div class="puzzle-header">
-                                            <span class="zone-badge font-orbitron">
+                                            <span class="zone-badge font-bangers">
                                                 {puzzle.type.toUpperCase()} VAULT
                                             </span>
-                                            <h2 class="font-orbitron">
+                                            <h2 class="font-bangers">
                                                 {puzzle.name}
                                             </h2>
                                         </div>
@@ -1578,10 +1338,10 @@ function App() {
                                                     </Show>
                                                 </div>
                                             </Show>
-
+ 
                                             <Show when={puzzle.type === "quadratics"}>
                                                 <p class="problem-description">{puzzle.problem}</p>
-                                                <button onClick={handleQuadraticsLaunch} class="glow-button font-orbitron" style={{ 'margin-bottom': '15px' }}>
+                                                <button onClick={handleQuadraticsLaunch} class="glow-button font-bangers" style={{ 'margin-bottom': '15px' }}>
                                                     LAUNCH PROJECTILE
                                                 </button>
                                                 <Show when={puzzle.options}>
@@ -1602,7 +1362,7 @@ function App() {
                                                     </div>
                                                 </Show>
                                             </Show>
-
+ 
                                             <Show when={puzzle.type === "trig"}>
                                                 <p class="problem-description">{puzzle.problem}</p>
                                                 <Show when={puzzle.options} fallback={
@@ -1652,7 +1412,7 @@ function App() {
                                                     </div>
                                                 </Show>
                                             </Show>
-
+ 
                                             <Show when={puzzle.type === "logic"}>
                                                 <p class="problem-description">{puzzle.problem}</p>
                                                 <div class="input-group">
@@ -1674,20 +1434,20 @@ function App() {
                                                 </div>
                                             </Show>
                                         </div>
-
+ 
                                         <div class="puzzle-actions">
-                                            <button onClick={handleSubmitAnswer} class="glow-button font-orbitron">SUBMIT ANSWER</button>
-                                            <button onClick={handleAbandonVault} class="exit-button font-orbitron">ABANDON VAULT</button>
+                                            <button onClick={handleSubmitAnswer} class="glow-button font-bangers">SUBMIT ANSWER</button>
+                                            <button onClick={handleAbandonVault} class="exit-button font-bangers">ABANDON VAULT</button>
                                         </div>
                                         
                                         <div class={`feedback-msg font-rajdhani ${puzzleFeedbackType() === 'success' ? 'feedback-success' : 'feedback-error'}`}>
                                             {puzzleFeedback()}
                                         </div>
                                     </div>
-
+ 
                                     {/* Visualizer Canvas */}
                                     <div class="puzzle-visualizer">
-                                        <div class="visualizer-header font-orbitron">HOLOGRAPHIC DIAGRAM SYSTEM</div>
+                                        <div class="visualizer-header font-bangers">HOLOGRAPHIC DIAGRAM SYSTEM</div>
                                         <div class="canvas-wrapper">
                                             <canvas ref={puzzleCanvasRef} id="puzzle-canvas"></canvas>
                                         </div>
@@ -1700,9 +1460,20 @@ function App() {
                             }>
                                 {/* Fully Comic Animated Drag-and-Drop Puzzle Overlay for Level 1 */}
                                 <div class={`puzzle-container comic-popup ${shakeOverlay() ? 'shake' : ''}`}>
+                                    {/* Decorative Background Numbers */}
+                                    <div class="comic-bg-numbers-container">
+                                        <span class="comic-bg-num" style={{ top: '10%', left: '8%', 'font-size': '2rem', 'animation-delay': '0s' }}>5</span>
+                                        <span class="comic-bg-num" style={{ top: '25%', right: '12%', 'font-size': '3rem', 'animation-delay': '1s' }}>9</span>
+                                        <span class="comic-bg-num" style={{ top: '65%', left: '15%', 'font-size': '2.5rem', 'animation-delay': '2s' }}>3</span>
+                                        <span class="comic-bg-num" style={{ top: '75%', right: '8%', 'font-size': '1.8rem', 'animation-delay': '1.5s' }}>7</span>
+                                        <span class="comic-bg-num" style={{ top: '45%', left: '85%', 'font-size': '2.2rem', 'animation-delay': '0.5s' }}>4</span>
+                                        <span class="comic-bg-num" style={{ top: '80%', left: '50%', 'font-size': '2.8rem', 'animation-delay': '2.5s' }}>2</span>
+                                        <span class="comic-bg-num" style={{ top: '5%', right: '35%', 'font-size': '2.4rem', 'animation-delay': '3s' }}>8</span>
+                                        <span class="comic-bg-num" style={{ top: '55%', left: '30%', 'font-size': '2.1rem', 'animation-delay': '0.8s' }}>6</span>
+                                    </div>
                                     {/* Header row with Title and Resume / Home buttons */}
                                     <div class="comic-header-row">
-                                        <h2 class="comic-vault-title font-orbitron">
+                                        <h2 class="comic-vault-title font-bangers">
                                             💥 TREASURE CHEST {puzzle.id + 1} 💥
                                         </h2>
                                         <div class="comic-control-btns">
@@ -1716,22 +1487,13 @@ function App() {
                                     </div>
 
                                     {/* Concept Header */}
-                                    <div class="comic-concept-header font-orbitron" style={{ 'text-align': 'center', 'font-weight': 'bold', 'margin-bottom': '2px', 'font-size': '1.3rem', 'color': '#c2410c' }}>
-                                        {level() === 1 ? (
-                                            puzzle.id === 0 ? "🎯 CONCEPT: ASCENDING ORDER" : 
-                                            puzzle.id === 1 ? "🎯 CONCEPT: DESCENDING ORDER" : 
-                                            "🎯 CONCEPT: COMPARING NUMBERS"
-                                        ) : (
-                                            puzzle.id === 0 ? "🎯 CONCEPT: ADDITION" : 
-                                            puzzle.id === 1 ? "🎯 CONCEPT: SUBTRACTION" : 
-                                            puzzle.id === 2 ? "🎯 CONCEPT: MULTIPLICATION" : 
-                                            "🎯 CONCEPT: DIVISION"
-                                        )}
+                                    <div class="comic-concept-header font-bangers" style={{ 'text-align': 'center', 'font-weight': 'bold', 'margin-bottom': '2px', 'font-size': '1.3rem', 'color': '#c2410c' }}>
+                                        {"🎯 CONCEPT: " + (puzzle.concept || "MATH CHALLENGE").toUpperCase()}
                                     </div>
 
                                     {/* Star Progress Bar */}
                                     <div class="comic-stars-container" style={{ 'text-align': 'center' }}>
-                                        <p style={{ 'font-weight': 'bold', 'margin-bottom': '5px', 'font-size': '1.1rem', 'color': '#000' }}>
+                                        <p style={{ 'font-weight': 'bold', 'margin-bottom': '2px', 'font-size': '0.95rem', 'color': '#000' }}>
                                             Question {lvl1QuestionIdx() + 1} of {activeLevelPuzzles()[puzzle.id] ? activeLevelPuzzles()[puzzle.id].length : 3}
                                         </p>
                                         <div class="comic-stars">
@@ -1828,7 +1590,7 @@ function App() {
                                             </div>
                                         </Show>
 
-                                        <p style={{ 'font-weight': 'bold', 'margin-top': '10px', 'font-size': '1.1rem', 'color': '#555' }}>
+                                        <p style={{ 'font-weight': 'bold', 'margin-top': '4px', 'font-size': '0.9rem', 'color': '#555' }}>
                                             👇 Drag cards into slots, or click cards to place/remove them! 👇
                                         </p>
 

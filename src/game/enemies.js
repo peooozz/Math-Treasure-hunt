@@ -93,7 +93,7 @@ const Enemies = (() => {
         if (!enemyModelTemplate && !isModelLoading) {
             isModelLoading = true;
             const loader = new GLTFLoader();
-            loader.load(getAssetUrl('/o.u.r.s_enemy_1.glb'), (gltf) => {
+            loader.load(getAssetUrl('/plasmas_mechagodzilla_anime_trilogy.glb'), (gltf) => {
                 enemyModelTemplate = gltf.scene;
                 enemyModelTemplate.traverse(child => {
                     if (child.isMesh) {
@@ -117,13 +117,13 @@ const Enemies = (() => {
         
         if (orbGeometry) return;
         
-        // Octahedron orb (pink glow)
-        orbGeometry = new THREE.OctahedronGeometry(0.4, 0);
+        // Enemy orb — fiery RED icosahedron with inner core glow
+        orbGeometry = new THREE.IcosahedronGeometry(0.45, 1);
         orbMaterial = new THREE.MeshStandardMaterial({
-            color: 0xff007a,
-            emissive: 0xb90055,
-            roughness: 0.1,
-            metalness: 0.8
+            color: 0xff0000,
+            emissive: 0xcc0000,
+            roughness: 0.05,
+            metalness: 0.9
         });
 
         // Health kit box
@@ -136,22 +136,22 @@ const Enemies = (() => {
         });
         crossMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
 
-        // Fireballs (pink plasma)
+        // Fireballs (red plasma)
         fireballGeo = new THREE.SphereGeometry(0.24, 8, 8);
         fireballMat = new THREE.MeshBasicMaterial({
-            color: 0xff007a,
+            color: 0xff2200,
             toneMapped: false
         });
 
         // Key geometries and materials
-        keyTorusGeo = new THREE.TorusGeometry(0.18, 0.04, 8, 24);
-        keyShaftGeo = new THREE.CylinderGeometry(0.03, 0.03, 0.6, 8);
-        keyTeethGeo = new THREE.BoxGeometry(0.12, 0.1, 0.04);
+        keyTorusGeo = new THREE.TorusGeometry(0.22, 0.05, 12, 32);
+        keyShaftGeo = new THREE.CylinderGeometry(0.035, 0.035, 0.55, 8);
+        keyTeethGeo = new THREE.BoxGeometry(0.14, 0.12, 0.04);
         goldMaterial = new THREE.MeshStandardMaterial({
             color: 0xffd700,
-            metalness: 0.9,
-            roughness: 0.1,
-            emissive: 0x3f3f00
+            metalness: 0.95,
+            roughness: 0.05,
+            emissive: 0x6b5a00
         });
     }
 
@@ -306,7 +306,7 @@ const Enemies = (() => {
         if (lvl && lvl.modelPath) {
             spawnY = getGroundHeight(finalX, finalZ);
         }
-        group.position.set(finalX, spawnY + 1.1, finalZ);
+        group.position.set(finalX, spawnY + 0.3, finalZ);
         
         // Scale to 1.4x (menacing giant insect!)
         group.scale.set(1.4, 1.4, 1.4);
@@ -624,16 +624,15 @@ const Enemies = (() => {
      * Spawn key drop guaranteed, and optionally an Orb or a Health Kit
      */
     function spawnDrop(pos) {
-        // 1. Guaranteed Key Drop
-        // Calculate ground height for key
+        // 1. Guaranteed Key Drop — golden key on the ground with glow ring
         const keyGroundY = getGroundHeight(pos.x, pos.z);
         
         const keyGroup = new THREE.Group();
         keyGroup.position.copy(pos);
-        keyGroup.position.y = keyGroundY + 0.6; // Slightly above ground
+        keyGroup.position.y = keyGroundY + 0.35;
         
         const handle = new THREE.Mesh(keyTorusGeo, goldMaterial);
-        handle.position.y = 0.4;
+        handle.position.y = 0.35;
         keyGroup.add(handle);
 
         const shaft = new THREE.Mesh(keyShaftGeo, goldMaterial);
@@ -641,12 +640,20 @@ const Enemies = (() => {
         keyGroup.add(shaft);
 
         const teeth = new THREE.Mesh(keyTeethGeo, goldMaterial);
-        teeth.position.set(0.08, -0.2, 0);
+        teeth.position.set(0.08, -0.18, 0);
         keyGroup.add(teeth);
+
+        // Glowing halo ring around key
+        const keyRingGeo = new THREE.TorusGeometry(0.55, 0.03, 8, 32);
+        const keyRingMat = new THREE.MeshBasicMaterial({ color: 0xffd700, transparent: true, opacity: 0.5 });
+        const keyRing = new THREE.Mesh(keyRingGeo, keyRingMat);
+        keyRing.rotation.x = Math.PI / 2;
+        keyRing.position.y = 0.15;
+        keyGroup.add(keyRing);
         
         sceneRef.add(keyGroup);
         
-        const light = new THREE.PointLight(0xffd700, 2.0, 5);
+        const light = new THREE.PointLight(0xffd700, 3.0, 6);
         light.position.copy(keyGroup.position);
         sceneRef.add(light);
         
@@ -654,7 +661,7 @@ const Enemies = (() => {
             type: 'key',
             mesh: keyGroup,
             light: light,
-            baseY: keyGroundY + 0.6,
+            baseY: keyGroundY + 0.35,
             time: 0
         });
 
@@ -666,18 +673,35 @@ const Enemies = (() => {
             extraPos.y = extraGroundY + 0.6;
             
             if (rand < 0.5) {
-                // Drop Anti-Gravity Orb
-                const mesh = new THREE.Mesh(orbGeometry, orbMaterial);
-                mesh.position.copy(extraPos);
-                sceneRef.add(mesh);
+                // Drop Red Enemy Orb with spinning ring + inner core
+                const orbGroup = new THREE.Group();
+                orbGroup.position.copy(extraPos);
 
-                const extraLight = new THREE.PointLight(0xff007a, 1.8, 4);
-                extraLight.position.copy(mesh.position);
+                const outerMesh = new THREE.Mesh(orbGeometry, orbMaterial);
+                orbGroup.add(outerMesh);
+
+                // Inner glowing core
+                const coreGeo = new THREE.SphereGeometry(0.2, 16, 16);
+                const coreMat = new THREE.MeshBasicMaterial({ color: 0xff4444, transparent: true, opacity: 0.8 });
+                const core = new THREE.Mesh(coreGeo, coreMat);
+                orbGroup.add(core);
+
+                // Spinning ring around orb
+                const ringGeo = new THREE.TorusGeometry(0.6, 0.025, 8, 32);
+                const ringMat = new THREE.MeshBasicMaterial({ color: 0xff0000, transparent: true, opacity: 0.6 });
+                const ring = new THREE.Mesh(ringGeo, ringMat);
+                ring.rotation.x = Math.PI / 2;
+                orbGroup.add(ring);
+
+                sceneRef.add(orbGroup);
+
+                const extraLight = new THREE.PointLight(0xff0000, 2.5, 5);
+                extraLight.position.copy(orbGroup.position);
                 sceneRef.add(extraLight);
 
                 activeDrops.push({
                     type: 'orb',
-                    mesh: mesh,
+                    mesh: orbGroup,
                     light: extraLight,
                     baseY: extraPos.y,
                     time: 0
@@ -825,7 +849,7 @@ const Enemies = (() => {
 
                     // Hard clamp for chasing in open worlds
                     if (lvl.theme === "arabic_city" || lvl.openWorld) {
-                        const limit = 39.5;
+                        const limit = 79.5;
                         enemy.mesh.position.x = Math.max(-limit, Math.min(limit, enemy.mesh.position.x));
                         enemy.mesh.position.z = Math.max(-limit, Math.min(limit, enemy.mesh.position.z));
                     }
@@ -867,7 +891,7 @@ const Enemies = (() => {
 
                 // Hard clamp for open worlds to prevent ever escaping map
                 if (lvl.theme === "arabic_city" || lvl.openWorld) {
-                    const limit = 39.5;
+                    const limit = 79.5;
                     enemy.mesh.position.x = Math.max(-limit, Math.min(limit, enemy.mesh.position.x));
                     enemy.mesh.position.z = Math.max(-limit, Math.min(limit, enemy.mesh.position.z));
                 }
@@ -895,7 +919,7 @@ const Enemies = (() => {
                         enemy.lastSamplePosGroundY = groundY;
                     }
                 }
-                targetY = groundY + 1.1;
+                targetY = groundY + 0.3;
                 if (cachedEnvironmentModel) {
                     modelLoaded = true;
                 }
@@ -963,13 +987,33 @@ const Enemies = (() => {
             }
         }
 
-        // 3. Update Collectible Drops (bobbing and rotating)
+        // 3. Update Collectible Drops (enhanced bobbing, pulsing, spinning)
         for (let i = 0; i < activeDrops.length; i++) {
             const drop = activeDrops[i];
             drop.time += deltaTime;
-            drop.mesh.position.y = drop.baseY + Math.sin(drop.time * 3) * 0.2;
-            drop.mesh.rotation.x += deltaTime * 1.5;
-            drop.mesh.rotation.y += deltaTime * 2.0;
+            // Gentle floating bob
+            drop.mesh.position.y = drop.baseY + Math.sin(drop.time * 2.5) * 0.15;
+            // Smooth rotation
+            drop.mesh.rotation.y += deltaTime * 2.5;
+            if (drop.type === 'key') {
+                // Keys tilt slightly while spinning
+                drop.mesh.rotation.z = Math.sin(drop.time * 2) * 0.15;
+            } else {
+                drop.mesh.rotation.x += deltaTime * 1.2;
+            }
+            // Pulsing light intensity for all drops
+            if (drop.light) {
+                drop.light.intensity = 2.0 + Math.sin(drop.time * 4) * 1.0;
+            }
+            // Spin the inner ring for orb groups
+            if (drop.type === 'orb' && drop.mesh.children) {
+                drop.mesh.children.forEach(child => {
+                    if (child.geometry && child.geometry.type === 'TorusGeometry') {
+                        child.rotation.z += deltaTime * 3.0;
+                        child.rotation.x = Math.PI / 2 + Math.sin(drop.time * 2) * 0.3;
+                    }
+                });
+            }
         }
 
         // 4. Collection check
