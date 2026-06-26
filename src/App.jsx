@@ -11,35 +11,41 @@ const LEVEL_CARDS_DATA = [
     { 
         id: 1, 
         name: "Level 1: Arabic City", 
-        concept: "Euclid's HCF, Linear AP terms", 
+        concept: "Ascending, Descending & Comparing Numbers", 
         diff: "Basic", 
         color: "#f59e0b", 
+        gradient: "linear-gradient(135deg, #f59e0b 0%, #ea580c 100%)",
+        rightGradient: "linear-gradient(135deg, #2e1a05 0%, #0f0902 100%)",
         icon: "🕌", 
         difficultyProgress: 10,
-        formulaText: "HCF(a,b) & a_n = a+(n-1)d",
-        formulaDesc: "Use Euclid's Division Lemma (a = bq + r) to find Highest Common Factor. Find Arithmetic Progression nth term."
+        formulaText: "a < b, a > b, a = b",
+        formulaDesc: "Sort numbers in ascending and descending order. Use math comparison operators (<, >, =) to solve value relations."
     },
     { 
         id: 2, 
         name: "Level 2: Cyberpunk City", 
-        concept: "Quadratic Roots, Coordinates", 
+        concept: "Addition, Subtraction, Multiplication & Division", 
         diff: "Easy", 
         color: "#00f0ff", 
+        gradient: "linear-gradient(135deg, #00f0ff 0%, #0891b2 100%)",
+        rightGradient: "linear-gradient(135deg, #021e25 0%, #010c0f 100%)",
         icon: "🏙️", 
         difficultyProgress: 50,
-        formulaText: "x = -b±√D / 2a & d = √Δx²+Δy²",
-        formulaDesc: "Solve quadratic equations using standard formula roots. Calculate distance between Cartesian coordinates."
+        formulaText: "a + b, a - b, a × b, a ÷ b",
+        formulaDesc: "Solve fill-in-the-blank equations for addition, subtraction, multiplication, and division to unlock security vaults."
     },
     { 
         id: 3, 
         name: "Level 3: Neighborhood City", 
-        concept: "Volumes, Probability, Fractions, Money & More", 
+        concept: "Volumes, Probability, Fractions, Mixed Numbers & Money", 
         diff: "Medium", 
         color: "#a855f7", 
+        gradient: "linear-gradient(135deg, #a855f7 0%, #701a75 100%)",
+        rightGradient: "linear-gradient(135deg, #1d072b 0%, #0a0210 100%)",
         icon: "🏙️", 
         difficultyProgress: 100,
-        formulaText: "V = 4/3*πr³, P(E), a/b, Mixed Nos, ₹",
-        formulaDesc: "7 treasure vaults: Volumes, Probability, Polynomials, Fractions, Mixed Numbers, Measurement conversions, and Money math."
+        formulaText: "V = 4/3*πr³, P(E) = n(E)/n(S), a/b, Mixed Nos, ₹",
+        formulaDesc: "Solve Class 10 math challenges: Volume of sphere, Probability ratios, Polynomial sum/product of zeroes, Fractions, mixed numbers, and money calculations."
     }
 ];
 
@@ -74,7 +80,6 @@ function App() {
             return saved ? Math.min(parseInt(saved, 10), 3) : 3;
         })()
     );
-    const [devBypass, setDevBypass] = createSignal(false);
     const [activeLevelIndex, setActiveLevelIndex] = createSignal(0);
     const [loadingProgress, setLoadingProgress] = createSignal(null);
     
@@ -970,21 +975,9 @@ function App() {
                 <div id="start-screen" class="overlay-screen active comic-theme">
                     {/* Comic Top Bar */}
                     <div class="comic-top-bar animate-panel-pop">
-                        <div class="comic-title-container">
-                            <h1 class="comic-game-title font-orbitron">MATH VAULT</h1>
-                            <div class="comic-burst animate-bounce-slow">
-                                <span class="burst-text font-orbitron">ANTI-GRAVITY!</span>
-                            </div>
+                        <div class="comic-title-container" style={{ width: '100%', 'justify-content': 'center' }}>
+                            <h1 class="comic-game-title font-orbitron">MATH TREASURE HUNT</h1>
                         </div>
-                        <label class="dev-bypass-toggle font-orbitron comic-bypass">
-                            <input 
-                                type="checkbox" 
-                                checked={devBypass()} 
-                                onChange={(e) => setDevBypass(e.target.checked)} 
-                            />
-                            <span class="toggle-slider"></span>
-                            <span class="toggle-label">DEV BYPASS</span>
-                        </label>
                     </div>
 
                     {/* Comic Book Spread Slider */}
@@ -995,13 +988,20 @@ function App() {
 
                         <div class="comic-spread">
                             {/* Left Page: Mission Dossier */}
-                            <div class="comic-panel left-panel-dossier animate-panel-pop">
+                            <div 
+                                class="comic-panel left-panel-dossier animate-panel-pop"
+                                style={{ 
+                                    background: LEVEL_CARDS_DATA[activeLevelIndex()].id > unlockedLevels() 
+                                        ? 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)' 
+                                        : LEVEL_CARDS_DATA[activeLevelIndex()].gradient
+                                }}
+                            >
                                 <div class="panel-dots-bg"></div>
                                 <div class="panel-border-skew"></div>
                                 <div class="panel-content">
                                     <div class="panel-badge-row">
                                         <span class="panel-badge-level font-orbitron" style={{ color: LEVEL_CARDS_DATA[activeLevelIndex()].color }}>
-                                            {LEVEL_CARDS_DATA[activeLevelIndex()].id > unlockedLevels() && !devBypass() ? '🔒 LOCKED' : `LVL ${LEVEL_CARDS_DATA[activeLevelIndex()].id}`}
+                                            {LEVEL_CARDS_DATA[activeLevelIndex()].id > unlockedLevels() ? '🔒 LOCKED' : `LVL ${LEVEL_CARDS_DATA[activeLevelIndex()].id}`}
                                         </span>
                                         <span class={`panel-badge-diff font-orbitron ${LEVEL_CARDS_DATA[activeLevelIndex()].diff.toLowerCase().replace(" ", "-")}`}>
                                             {LEVEL_CARDS_DATA[activeLevelIndex()].diff}
@@ -1009,7 +1009,7 @@ function App() {
                                     </div>
                                     <div class="panel-main-info">
                                         <div class="comic-icon-large">
-                                            {LEVEL_CARDS_DATA[activeLevelIndex()].id > unlockedLevels() && !devBypass() ? '🔒' : LEVEL_CARDS_DATA[activeLevelIndex()].icon}
+                                            {LEVEL_CARDS_DATA[activeLevelIndex()].id > unlockedLevels() ? '🔒' : LEVEL_CARDS_DATA[activeLevelIndex()].icon}
                                         </div>
                                         <h2 class="comic-level-name font-orbitron">
                                             {LEVEL_CARDS_DATA[activeLevelIndex()].name.split(': ')[1]}
@@ -1029,7 +1029,7 @@ function App() {
                                                 class="danger-fill" 
                                                 style={{ 
                                                     width: `${LEVEL_CARDS_DATA[activeLevelIndex()].difficultyProgress}%`,
-                                                    background: LEVEL_CARDS_DATA[activeLevelIndex()].id > unlockedLevels() && !devBypass() ? '#4b5563' : LEVEL_CARDS_DATA[activeLevelIndex()].color
+                                                    background: LEVEL_CARDS_DATA[activeLevelIndex()].id > unlockedLevels() ? '#4b5563' : LEVEL_CARDS_DATA[activeLevelIndex()].color
                                                 }}
                                             ></div>
                                         </div>
@@ -1038,7 +1038,14 @@ function App() {
                             </div>
 
                             {/* Right Page: Formula File */}
-                            <div class="comic-panel right-panel-formula animate-panel-pop">
+                            <div 
+                                class="comic-panel right-panel-formula animate-panel-pop"
+                                style={{ 
+                                    background: LEVEL_CARDS_DATA[activeLevelIndex()].id > unlockedLevels() 
+                                        ? 'linear-gradient(135deg, #111827 0%, #030712 100%)' 
+                                        : LEVEL_CARDS_DATA[activeLevelIndex()].rightGradient
+                                }}
+                            >
                                 <div class="panel-dots-bg"></div>
                                 <div class="panel-border-skew"></div>
                                 <div class="panel-content">
@@ -1047,16 +1054,16 @@ function App() {
                                     </div>
                                     <div class="formula-dossier-body font-rajdhani">
                                         <div class="comic-formula-display font-orbitron">
-                                            {LEVEL_CARDS_DATA[activeLevelIndex()].id > unlockedLevels() && !devBypass() ? 'CLASSIFIED' : LEVEL_CARDS_DATA[activeLevelIndex()].formulaText}
+                                            {LEVEL_CARDS_DATA[activeLevelIndex()].id > unlockedLevels() ? 'CLASSIFIED' : LEVEL_CARDS_DATA[activeLevelIndex()].formulaText}
                                         </div>
                                         <p class="comic-formula-instructions">
-                                            {LEVEL_CARDS_DATA[activeLevelIndex()].id > unlockedLevels() && !devBypass() 
+                                            {LEVEL_CARDS_DATA[activeLevelIndex()].id > unlockedLevels() 
                                                 ? 'DECRYPT PREVIOUS VAULTS TO DISCLOSE FORMULA SPECIFICATIONS.' 
                                                 : LEVEL_CARDS_DATA[activeLevelIndex()].formulaDesc}
                                         </p>
                                     </div>
                                     <div class="comic-launch-panel">
-                                        {LEVEL_CARDS_DATA[activeLevelIndex()].id > unlockedLevels() && !devBypass() ? (
+                                        {LEVEL_CARDS_DATA[activeLevelIndex()].id > unlockedLevels() ? (
                                             <div class="comic-warning-stamp font-orbitron">
                                                 LOCKED!
                                             </div>
@@ -1101,7 +1108,7 @@ function App() {
                         <div class="comic-quick-selector font-orbitron">
                             <For each={LEVEL_CARDS_DATA}>
                                 {(card, idx) => {
-                                    const cardIsLocked = () => card.id > unlockedLevels() && !devBypass();
+                                    const cardIsLocked = () => card.id > unlockedLevels();
                                     const isSelected = () => idx() === activeLevelIndex();
                                     return (
                                         <button

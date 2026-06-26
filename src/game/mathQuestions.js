@@ -977,8 +977,7 @@ const GENERATORS = {
         2: () => generatePolynomialQuestion(),
         3: () => generateFractionQuestion(),
         4: () => generateMixedNumberQuestion(),
-        5: () => generateMeasurementQuestion(),
-        6: () => generateMoneyQuestion()
+        5: () => generateMoneyQuestion()
     }
 };
 

@@ -313,8 +313,8 @@ const Enemies = (() => {
         }
         group.position.set(finalX, spawnY + 0.3, finalZ);
         
-        // Scale to 1.4x (menacing giant insect!)
-        group.scale.set(1.4, 1.4, 1.4);
+        // Scale to 2.2x (menacing giant insect!)
+        group.scale.set(2.2, 2.2, 2.2);
 
         let legs = [];
         let pincerLGroup = null;
@@ -563,7 +563,7 @@ const Enemies = (() => {
 
         // 5. Billboard style Health Bar above head
         const healthBarGroup = new THREE.Group();
-        healthBarGroup.position.set(0, 1.6, 0);
+        healthBarGroup.position.set(0, 2.4, 0);
         group.add(healthBarGroup);
 
         const hbBg = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.08, 0.02), new THREE.MeshBasicMaterial({ color: 0x990000 }));
@@ -575,7 +575,7 @@ const Enemies = (() => {
 
         // Floating name tag
         const sprite = createTextSprite(labelText, '#ff007a');
-        sprite.position.set(0, 2.0, 0);
+        sprite.position.set(0, 2.9, 0);
         group.add(sprite);
 
         sceneRef.add(group);
@@ -594,7 +594,7 @@ const Enemies = (() => {
             patrolAngle: Math.random() * Math.PI * 2,
             health: hpVal,
             maxHealth: hpVal,
-            radius: 2.1, // Larger hit radius for 1.4x scale
+            radius: 3.2, // Larger hit radius for 2.2x scale
             legs: legs,
             pincerL: pincerLGroup,
             pincerR: pincerRGroup,
