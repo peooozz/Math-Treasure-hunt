@@ -90,12 +90,12 @@ export const LEVELS = [
         theme: "cyberpunk_city",
         openWorld: true,
         modelPath: "/cyberpunk_city.glb",
-        floorColor: 0x09090b, // Deep black
-        wallColor: 0x1e293b,  // Dark slate
+        floorColor: 0x18181b, // Dark zinc instead of pure black
+        wallColor: 0x27272a,  // Zinc-700
         lightColorLeft: 0xff007a, // Neon hot pink
         lightColorRight: 0x00f0ff, // Cyber cyan
-        fogColor: 0x09090b,
-        fogDensity: 0.015,
+        fogColor: 0x0a0a14, // Deep cyber indigo-black
+        fogDensity: 0.008, // Less dense fog to see distant buildings
         grid: [
             [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
             [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],

@@ -214,6 +214,13 @@ const GameEngine = (() => {
         camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         scene.add(camera);
 
+        // Add a headlight to the player camera for dark levels
+        if (lvl.theme === "cyberpunk_city") {
+            const headlight = new THREE.PointLight(0xffffff, 2.0, 35);
+            headlight.position.set(0, 0, 0);
+            camera.add(headlight);
+        }
+
         // Create 3D compass navigation arrow
         const arrowGeo = new THREE.ConeGeometry(0.04, 0.15, 6);
         arrowGeo.rotateX(-Math.PI / 2);
@@ -290,11 +297,13 @@ const GameEngine = (() => {
         scene.fog = new THREE.FogExp2(lvl.fogColor || 0xf8fafc, lvl.fogDensity || 0.015);
 
         // Ambient illumination
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
+        const ambientIntensity = (lvl.theme === "cyberpunk_city") ? 1.85 : 0.85;
+        const ambientLight = new THREE.AmbientLight(0xffffff, ambientIntensity);
         scene.add(ambientLight);
         
         // Single optimized DirectionalLight (Shadows disabled for 60fps)
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.65);
+        const dirIntensity = (lvl.theme === "cyberpunk_city") ? 1.4 : 0.65;
+        const directionalLight = new THREE.DirectionalLight(0xffffff, dirIntensity);
         directionalLight.position.set(10, 30, 15);
         directionalLight.castShadow = false;
         directionalLight.shadow.mapSize.width = 1024;
@@ -687,6 +696,27 @@ const GameEngine = (() => {
                             name.includes('cloud')
                         ) {
                             return;
+                        }
+
+                        // Optimize cyberpunk city materials to ensure bright and glowing structures
+                        if (lvl.theme === "cyberpunk_city" && child.material) {
+                            const materials = Array.isArray(child.material) ? child.material : [child.material];
+                            materials.forEach(mat => {
+                                if (mat.emissive) {
+                                    if (mat.emissive.r > 0 || mat.emissive.g > 0 || mat.emissive.b > 0) {
+                                        mat.emissiveIntensity = 15.0; // Boost emissive lights
+                                    } else if (name.includes('neon') || name.includes('emissive') || name.includes('glow') || name.includes('light')) {
+                                        mat.emissive.setHex(0x00f0ff);
+                                        mat.emissiveIntensity = 10.0;
+                                    }
+                                }
+                                if (mat.metalness !== undefined) {
+                                    mat.metalness = Math.min(mat.metalness, 0.2); // Lower reflectivity
+                                }
+                                if (mat.roughness !== undefined) {
+                                    mat.roughness = Math.max(mat.roughness, 0.6); // Higher diffusion
+                                }
+                            });
                         }
 
                         // Compute bounding box and center in world coordinates early
