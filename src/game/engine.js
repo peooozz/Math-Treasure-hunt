@@ -726,7 +726,7 @@ const GameEngine = (() => {
                         const meshCenter = new THREE.Vector3();
                         meshBox.getCenter(meshCenter);
 
-                        if (isOpenWorld) {
+                        if (isOpenWorld && lvl.theme === "arabic_city") {
                             // Hide any mesh in the central walkable zone (within 25m of map center)
                             // that is not part of the ground/street.
                             const distFromCenter = Math.sqrt(meshCenter.x * meshCenter.x + meshCenter.z * meshCenter.z);
@@ -933,10 +933,12 @@ const GameEngine = (() => {
 
                         if (isOpenWorld) {
                             // Skip any mesh in the central walkable zone (within 25m of map center)
-                            // This prevents mid-street props from blocking movement
-                            const distFromCenter = Math.sqrt(meshCenter.x * meshCenter.x + meshCenter.z * meshCenter.z);
-                            if (distFromCenter < 25) {
-                                return;
+                            // This prevents mid-street props from blocking movement in Arabic City
+                            if (lvl.theme === "arabic_city") {
+                                const distFromCenter = Math.sqrt(meshCenter.x * meshCenter.x + meshCenter.z * meshCenter.z);
+                                if (distFromCenter < 25) {
+                                    return;
+                                }
                             }
 
                             const spawnX = -halfW + lvl.spawn.x * 4 + 2;
